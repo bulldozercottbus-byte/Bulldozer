@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Club Intern</title>
 
-<!-- Firebase COMPAT (WICHTIG für GitHub Pages) -->
+<!-- Firebase COMPAT (für GitHub Pages notwendig) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -16,27 +16,37 @@ body {
   color: #eee;
   font-family: Arial, sans-serif;
 }
+.hidden { display: none; }
+
+.center {
+  text-align: center;
+  margin-top: 120px;
+}
+
 nav {
   background: #000;
   padding: 12px;
   display: flex;
-  gap: 15px;
+  justify-content: space-between;
+  align-items: center;
 }
-nav span { font-weight: bold; }
+
 nav button {
-  color: #fff;
   background: none;
   border: none;
+  color: #fff;
   cursor: pointer;
 }
-.hidden { display: none; }
-.center { text-align: center; margin-top: 120px; }
 
 .box {
   background: #1c1c1c;
   padding: 20px;
   margin: 20px;
   border-radius: 8px;
+}
+
+.admin {
+  border: 2px solid #a00;
 }
 
 input, select {
@@ -56,10 +66,8 @@ button {
   border: none;
   cursor: pointer;
 }
-button:hover { background: #555; }
-
-.admin {
-  border: 2px solid #a00;
+button:hover {
+  background: #555;
 }
 </style>
 </head>
@@ -67,21 +75,23 @@ button:hover { background: #555; }
 <body>
 
 <!-- LOGIN -->
-<div id="login" class="center">
+<div id="loginView" class="center">
   <h1>Club Interner Bereich</h1>
   <input id="loginEmail" placeholder="E-Mail">
   <input id="loginPassword" type="password" placeholder="Passwort">
-  <button onclick="login()">Login</button>
+  <button id="loginBtn">Login</button>
+  <p id="loginError" style="color:#f55;"></p>
 </div>
 
 <!-- DASHBOARD -->
-<div id="dashboard" class="hidden">
+<div id="dashboardView" class="hidden">
+
   <nav>
     <span id="navUser"></span>
-    <button onclick="logout()">Logout</button>
+    <button id="logoutBtn">Logout</button>
   </nav>
 
-  <div id="profile" class="box"></div>
+  <div id="profileBox" class="box"></div>
 
   <!-- ADMIN PANEL -->
   <div id="adminPanel" class="box admin hidden">
@@ -104,14 +114,14 @@ button:hover { background: #555; }
     </select>
 
     <input id="newSince" type="date">
-
-    <button onclick="createUser()">User erstellen</button>
+    <button id="createUserBtn">User erstellen</button>
     <p id="adminMsg"></p>
   </div>
+
 </div>
 
 <script>
-// 🔥 DEINE FIREBASE CONFIG (KORREKT)
+// ================= FIREBASE CONFIG =================
 const firebaseConfig = {
   apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
   authDomain: "bulldozer-f8a26.firebaseapp.com",
@@ -121,58 +131,76 @@ const firebaseConfig = {
   appId: "1:576318762826:web:7d812e32e152d64d425bb3"
 };
 
-// INITIALIZE
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// LOGIN
-function login() {
+// ================= LOGIN =================
+document.getElementById("loginBtn").addEventListener("click", () => {
+  document.getElementById("loginError").innerText = "";
+
   auth.signInWithEmailAndPassword(
-    loginEmail.value,
+    loginEmail.value.trim(),
     loginPassword.value
-  ).catch(e => alert(e.message));
-}
-
-// LOGOUT
-function logout() {
-  auth.signOut().then(() => location.reload());
-}
-
-// AUTH STATE
-auth.onAuthStateChanged(user => {
-  if (!user) return;
-
-  login.classList.add("hidden");
-  dashboard.classList.remove("hidden");
-
-  db.collection("users").doc(user.uid).get().then(doc => {
-    if (!doc.exists) {
-      alert("Kein User-Dokument gefunden");
-      return;
-    }
-
-    const d = doc.data();
-    navUser.innerText = d.name + " (" + d.rank + ")";
-
-    profile.innerHTML = `
-      <strong>Name:</strong> ${d.name}<br>
-      <strong>Rang:</strong> ${d.rank}<br>
-      <strong>Mitglied seit:</strong> ${d.memberSince}
-    `;
-
-    if (d.isAdmin === true) {
-      adminPanel.classList.remove("hidden");
-    }
+  ).catch(err => {
+    document.getElementById("loginError").innerText = err.message;
   });
 });
 
-// ADMIN: USER ERSTELLEN
-function createUser() {
+// ================= LOGOUT =================
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  auth.signOut();
+});
+
+// ================= AUTH STATE =================
+auth.onAuthStateChanged(user => {
+  if (!user) {
+    document.getElementById("loginView").classList.remove("hidden");
+    document.getElementById("dashboardView").classList.add("hidden");
+    return;
+  }
+
+  document.getElementById("loginView").classList.add("hidden");
+  document.getElementById("dashboardView").classList.remove("hidden");
+
+  db.collection("users").doc(user.uid).get()
+    .then(doc => {
+      if (!doc.exists) {
+        alert("FEHLER: Kein User-Dokument in Firestore");
+        return;
+      }
+
+      const d = doc.data();
+
+      document.getElementById("navUser").innerText =
+        d.name + " (" + d.rank + ")";
+
+      document.getElementById("profileBox").innerHTML = `
+        <strong>Name:</strong> ${d.name}<br>
+        <strong>Rang:</strong> ${d.rank}<br>
+        <strong>Mitglied seit:</strong> ${d.memberSince}
+      `;
+
+      if (d.isAdmin === true) {
+        document.getElementById("adminPanel").classList.remove("hidden");
+      } else {
+        document.getElementById("adminPanel").classList.add("hidden");
+      }
+    })
+    .catch(err => {
+      alert("Firestore-Fehler: " + err.message);
+    });
+});
+
+// ================= ADMIN: USER ERSTELLEN =================
+document.getElementById("createUserBtn").addEventListener("click", () => {
+  adminMsg.innerText = "";
+
   auth.createUserWithEmailAndPassword(
-    newEmail.value,
+    newEmail.value.trim(),
     newPassword.value
-  ).then(cred => {
+  )
+  .then(cred => {
     return db.collection("users").doc(cred.user.uid).set({
       name: newName.value,
       rank: newRank.value,
@@ -181,10 +209,14 @@ function createUser() {
       active: true,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-  }).then(() => {
+  })
+  .then(() => {
     adminMsg.innerText = "User erfolgreich erstellt ✅";
-  }).catch(e => adminMsg.innerText = e.message);
-}
+  })
+  .catch(err => {
+    adminMsg.innerText = err.message;
+  });
+});
 </script>
 
 </body>
