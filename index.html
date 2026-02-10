@@ -2,186 +2,458 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Club Intern</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Club Intern – Master</title>
 
-<!-- Firebase COMPAT -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
-body {
-  margin: 0;
-  background: #0f0f0f;
-  color: #eee;
-  font-family: Arial, sans-serif;
+:root{
+  --bg:#0c0c0c;
+  --card:#1c1c1c;
+  --accent:#b00000;
+  --ok:#1faa59;
+  --warn:#f5a623;
 }
-.hidden { display: none; }
-
-nav {
-  background: #000;
-  padding: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+body{margin:0;background:var(--bg);color:#eee;font-family:Arial}
+.hidden{display:none}
+nav{background:#000;padding:12px;display:flex;justify-content:space-between;align-items:center}
+button{background:#333;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
+button.primary{background:var(--accent)}
+button.ok{background:var(--ok)}
+button.warn{background:var(--warn);color:#000}
+button:hover{opacity:.9}
+.box{background:var(--card);margin:12px;padding:12px;border-radius:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.card{background:#222;padding:12px;border-radius:8px}
+input,textarea,select{
+  width:100%;background:#111;color:#fff;border:1px solid #333;
+  padding:8px;border-radius:6px;margin-bottom:8px
 }
-
-nav span { font-weight: bold; }
-
-button {
-  background: #333;
-  color: #fff;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-}
-button:hover { background: #555; }
-
-input, textarea {
-  width: 100%;
-  background: #111;
-  color: #fff;
-  border: 1px solid #333;
-  padding: 6px;
-  margin-bottom: 10px;
-}
-
-.box {
-  background: #1c1c1c;
-  padding: 15px;
-  margin: 15px;
-  border-radius: 8px;
-}
-
-.admin { border: 2px solid #a00; }
-.role { border-left: 4px solid #444; }
+h2,h3{margin-top:0}
+small{color:#aaa}
+.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#333;margin-right:6px}
+.tag.ok{background:var(--ok)}
+.tag.warn{background:var(--warn);color:#000}
 </style>
 </head>
 
 <body>
 
 <!-- LOGIN -->
-<div id="loginView" style="text-align:center;margin-top:120px;">
-  <h1>Club Interner Bereich</h1>
+<div id="loginView" style="text-align:center;margin-top:120px">
+  <h1>Club Intern</h1>
   <input id="loginEmail" placeholder="E-Mail">
   <input id="loginPassword" type="password" placeholder="Passwort">
-  <button onclick="login()">Login</button>
-  <p id="loginError" style="color:#f55;"></p>
+  <button class="primary" onclick="login()">Login</button>
+  <p id="loginError" style="color:#f55"></p>
 </div>
 
 <!-- DASHBOARD -->
 <div id="dashboardView" class="hidden">
 
-  <nav>
-    <span id="navUser"></span>
+<nav>
+  <span id="navUser"></span>
+  <div>
+    <button onclick="generateMonthlyReport()">📊 Monatsbericht</button>
+    <button onclick="window.print()">📄 PDF</button>
     <button onclick="logout()">Logout</button>
-  </nav>
-
-  <!-- PROFIL -->
-  <div id="profileBox" class="box"></div>
-
-  <!-- HANGAROUND -->
-  <div id="hangaroundBox" class="box role hidden">
-    <h3>🟤 Hangaround</h3>
-    <p>Eigene Notizen & Übersicht.</p>
-    <textarea placeholder="Eigene Notizen..."></textarea>
   </div>
+</nav>
 
-  <!-- PROSPECT -->
-  <div id="prospectBox" class="box role hidden">
-    <h3>🟡 Prospect</h3>
-    <p>Ausfahrten dokumentieren:</p>
-    <input type="date">
-    <textarea placeholder="Welche Ausfahrt?"></textarea>
+<div id="profileBox" class="box"></div>
+
+<!-- VORSTANDS DASHBOARD -->
+<div id="boardDashboard" class="box hidden">
+  <h2>📊 Übersicht</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>💰 Clubkasse</h3>
+      <p><b>Stand:</b> <span id="dashCash">0</span> €</p>
+      <small id="dashCashInfo"></small>
+    </div>
+    <div class="card">
+      <h3>🟡 Prospect</h3>
+      <p><span id="dashProspects">0</span> offen</p>
+    </div>
+    <div class="card">
+      <h3>🗳️ Abstimmungen</h3>
+      <p><span id="dashVotes">0</span> offen</p>
+    </div>
+    <div class="card">
+      <h3>🏍️ Letzte Ausfahrt</h3>
+      <small id="dashRide">–</small>
+    </div>
   </div>
+</div>
+  <!-- ================= HANGAROUND ================= -->
+<div id="hangaroundBox" class="box hidden">
+  <h2>🟤 Hangaround</h2>
+  <p>Eigene Notizen (privat)</p>
+  <textarea id="hangNotes"></textarea>
+  <button onclick="saveHangNotes()">Speichern</button>
+</div>
 
-  <!-- MEMBER -->
-  <div id="memberBox" class="box role hidden">
-    <h3>🟢 Member</h3>
-    <p>Abstimmungen & Meeting-Notizen</p>
-    <textarea placeholder="Meeting / Abstimmung"></textarea>
-  </div>
+<!-- ================= PROSPECT ================= -->
+<div id="prospectBox" class="box hidden">
+  <h2>🟡 Prospect</h2>
 
-  <!-- ROAD CAPTAIN -->
-  <div id="roadCaptainBox" class="box role hidden">
-    <h3>🔵 Road Captain</h3>
-    <p>Ausfahrten planen</p>
-    <textarea placeholder="Route / Planung"></textarea>
-  </div>
+  <h3>Eigene Notizen</h3>
+  <textarea id="prospectNotes"></textarea>
+  <button onclick="saveProspectNotes()">Speichern</button>
 
-  <!-- SERGEANT AT ARMS -->
-  <div id="saaBox" class="box role hidden">
-    <h3>🛡️ Sergeant-at-Arms</h3>
-    <p>Disziplin / Meldungen</p>
-    <textarea placeholder="Meldung / Vorfall"></textarea>
-  </div>
+  <h3>Ausfahrt eintragen</h3>
+  <input type="date" id="pRideDate">
+  <textarea id="pRideText" placeholder="Welche Ausfahrt?"></textarea>
+  <button onclick="addProspectRide()">Eintragen</button>
 
-  <!-- SECRETARY -->
-  <div id="secretaryBox" class="box role hidden">
-    <h3>📝 Secretary</h3>
-    <p>Protokolle & Bestätigungen</p>
-    <textarea placeholder="Protokoll"></textarea>
-  </div>
+  <h3>Status meiner Ausfahrten</h3>
+  <div id="prospectRideList"></div>
+</div>
 
-  <!-- TREASURER -->
-  <div id="treasurerBox" class="box role hidden">
-    <h3>💰 Treasurer</h3>
-    <p>Clubkasse & Beiträge</p>
-    <textarea placeholder="Ein-/Ausgaben"></textarea>
-  </div>
+<!-- ================= ROAD CAPTAIN ================= -->
+<div id="roadCaptainBox" class="box hidden">
+  <h2>🏍️ Road Captain – Ausfahrten planen</h2>
+  <input id="rideTitle" placeholder="Titel / Strecke">
+  <input id="rideTime" placeholder="Datum & Uhrzeit">
+  <textarea id="ridePlan" placeholder="Route, Zeiten, Hinweise"></textarea>
+  <button onclick="addRide()">Ausfahrt speichern</button>
+</div>
 
-  <!-- VICE PRESIDENT -->
-  <div id="vpBox" class="box role hidden">
-    <h3>👑 Vice President</h3>
-    <p>Leitungs- & Clubinfos</p>
-    <textarea placeholder="Ankündigung"></textarea>
-  </div>
+<!-- ================= AUSFAHRTEN (ALLE AB PROSPECT) ================= -->
+<div id="rideView" class="box hidden">
+  <h2>📍 Geplante Ausfahrten</h2>
+  <div id="rideList"></div>
+</div>
 
-  <!-- PRESIDENT -->
-  <div id="presidentBox" class="box role hidden">
-    <h3>👑 President</h3>
-    <p>Finale Entscheidungen</p>
-    <textarea placeholder="Entscheidung"></textarea>
-  </div>
-
-  <!-- ADMIN -->
-  <div id="adminBox" class="box admin hidden">
-    <h3>🔧 ADMIN – VOLLER ZUGRIFF</h3>
-    <p>Admin kann alles sehen & bearbeiten.</p>
-  </div>
-
+<!-- ================= BESTÄTIGUNGEN ================= -->
+<div id="confirmBox" class="box hidden">
+  <h2>✅ Prospect-Ausfahrten bestätigen</h2>
+  <div id="confirmList"></div>
 </div>
 
 <script>
-// ================= FIREBASE =================
-const firebaseConfig = {
-  apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
-  authDomain: "bulldozer-f8a26.firebaseapp.com",
-  projectId: "bulldozer-f8a26",
-  storageBucket: "bulldozer-f8a26.firebasestorage.app",
-  messagingSenderId: "576318762826",
-  appId: "1:576318762826:web:7d812e32e152d64d425bb3"
-};
+// ===== HANGAROUND =====
+function saveHangNotes(){
+  db.collection("notes").doc(auth.currentUser.uid)
+  .set({text:hangNotes.value},{merge:true});
+}
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+// ===== PROSPECT =====
+function saveProspectNotes(){
+  db.collection("notes").doc(auth.currentUser.uid)
+  .set({text:prospectNotes.value},{merge:true});
+}
 
-// ================= LOGIN =================
-function login() {
+function addProspectRide(){
+  db.collection("prospect_rides").add({
+    userId: auth.currentUser.uid,
+    name: currentUser.name,
+    date: pRideDate.value,
+    text: pRideText.value,
+    status: "offen",
+    checkedBy: "",
+    comment: "",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+function loadMyProspectRides(){
+  prospectRideList.innerHTML="";
+  db.collection("prospect_rides")
+  .where("userId","==",auth.currentUser.uid)
+  .onSnapshot(snap=>{
+    prospectRideList.innerHTML="";
+    snap.forEach(doc=>{
+      const r=doc.data();
+      prospectRideList.innerHTML+=`
+        <div class="card">
+          <b>${r.date}</b><br>
+          ${r.text}<br>
+          <small>Status: ${r.status}</small><br>
+          ${r.comment?`<small>Kommentar: ${r.comment}</small>`:""}
+        </div>
+      `;
+    });
+  });
+}
+
+// ===== ROAD CAPTAIN =====
+function addRide(){
+  db.collection("rides").add({
+    title: rideTitle.value,
+    time: rideTime.value,
+    plan: ridePlan.value,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+function loadRides(){
+  rideList.innerHTML="";
+  db.collection("rides").orderBy("createdAt","desc")
+  .onSnapshot(snap=>{
+    rideList.innerHTML="";
+    snap.forEach(doc=>{
+      const r=doc.data();
+      rideList.innerHTML+=`
+        <div class="card">
+          <b>${r.title}</b><br>
+          ${r.time}<br>
+          <small>${r.plan}</small>
+        </div>
+      `;
+    });
+  });
+}
+
+// ===== BESTÄTIGUNGEN =====
+function loadConfirmations(){
+  confirmList.innerHTML="";
+  db.collection("prospect_rides")
+  .where("status","==","offen")
+  .onSnapshot(snap=>{
+    confirmList.innerHTML="";
+    snap.forEach(doc=>{
+      const r=doc.data();
+      confirmList.innerHTML+=`
+        <div class="card">
+          <b>${r.name}</b> – ${r.date}<br>
+          ${r.text}<br>
+          <input id="c_${doc.id}" placeholder="Kommentar">
+          <button class="ok" onclick="confirmRide('${doc.id}',true)">Bestätigen</button>
+          <button class="warn" onclick="confirmRide('${doc.id}',false)">Ablehnen</button>
+        </div>
+      `;
+    });
+  });
+}
+
+function confirmRide(id,ok){
+  db.collection("prospect_rides").doc(id).update({
+    status: ok?"bestätigt":"abgelehnt",
+    checkedBy: currentUser.name,
+    comment: document.getElementById("c_"+id).value
+  });
+}
+</script>
+<!-- ================= SECRETARY ================= -->
+<div id="secretaryBox" class="box hidden">
+  <h2>📝 Secretary – Protokolle & Dokumentation</h2>
+
+  <h3>Besprechungsprotokoll</h3>
+  <textarea id="secMeeting"></textarea>
+  <button onclick="saveSecretary('meeting')">Speichern</button>
+
+  <h3>Member-Tracking / Änderungen</h3>
+  <textarea id="secMember"></textarea>
+  <button onclick="saveSecretary('member')">Speichern</button>
+
+  <h3>Allgemeine Dokumentation</h3>
+  <textarea id="secDoc"></textarea>
+  <button onclick="saveSecretary('doc')">Speichern</button>
+</div>
+
+<!-- ================= TREASURER / CLUBKASSE ================= -->
+<div id="treasurerBox" class="box hidden">
+  <h2>💰 Clubkasse</h2>
+
+  <!-- Buchung (nur Treasurer & Admin) -->
+  <div id="cashForm" class="hidden">
+    <select id="cashType">
+      <option value="einnahme">Einnahme</option>
+      <option value="ausgabe">Ausgabe</option>
+      <option value="support">Support</option>
+    </select>
+    <input id="cashAmount" placeholder="Betrag (z.B. 50 oder -20)">
+    <input id="cashDesc" placeholder="Beschreibung">
+    <button onclick="addCash()">Buchen</button>
+  </div>
+
+  <p><b>Gesamtstand:</b> <span id="cashTotal">0</span> €</p>
+
+  <!-- Historie (Vorstand & Admin) -->
+  <div id="cashHistoryBox" class="hidden">
+    <h3>📜 Historie</h3>
+    <table style="width:100%">
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Typ</th>
+          <th>Betrag</th>
+          <th>Beschreibung</th>
+          <th>Von</th>
+        </tr>
+      </thead>
+      <tbody id="cashHistory"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================= ABSTIMMUNGEN ================= -->
+<div id="voteBox" class="box hidden">
+  <h2>🗳️ Abstimmungen</h2>
+
+  <!-- Erstellen (Secretary / Admin) -->
+  <div id="voteCreateBox" class="hidden">
+    <input id="voteTitle" placeholder="Abstimmungsthema">
+    <button onclick="createVote()">Abstimmung erstellen</button>
+  </div>
+
+  <div id="voteList"></div>
+</div>
+
+<script>
+// ===== SECRETARY =====
+function saveSecretary(type){
+  const text =
+    type==="meeting" ? secMeeting.value :
+    type==="member"  ? secMember.value  :
+                        secDoc.value;
+
+  db.collection("secretary_docs").add({
+    type,
+    text,
+    by: currentUser.name,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+// ===== CLUBKASSE =====
+function addCash(){
+  const amount = Number(cashAmount.value);
+  if(!amount){ alert("Ungültiger Betrag"); return; }
+
+  db.collection("cash").add({
+    amount,
+    type: cashType.value,
+    desc: cashDesc.value,
+    by: currentUser.name,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  cashAmount.value="";
+  cashDesc.value="";
+}
+
+function loadCash(){
+  let total = 0;
+  cashHistory.innerHTML="";
+
+  db.collection("cash").orderBy("createdAt","desc")
+  .onSnapshot(snap=>{
+    total = 0;
+    cashHistory.innerHTML="";
+    snap.forEach(doc=>{
+      const c = doc.data();
+      total += c.amount;
+
+      if(!cashHistoryBox.classList.contains("hidden")){
+        const d = c.createdAt ? c.createdAt.toDate().toLocaleDateString() : "";
+        cashHistory.innerHTML += `
+          <tr>
+            <td>${d}</td>
+            <td>${c.type}</td>
+            <td>${c.amount} €</td>
+            <td>${c.desc}</td>
+            <td>${c.by}</td>
+          </tr>
+        `;
+      }
+    });
+    cashTotal.innerText = total.toFixed(2);
+  });
+}
+
+// ===== ABSTIMMUNGEN =====
+function createVote(){
+  if(!voteTitle.value) return;
+  db.collection("votes").add({
+    title: voteTitle.value,
+    open: true,
+    createdBy: currentUser.name,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  voteTitle.value="";
+}
+
+function vote(voteId, choice){
+  db.collection("votes").doc(voteId)
+  .collection("results").doc(auth.currentUser.uid)
+  .set({ choice });
+}
+
+function closeVote(voteId){
+  db.collection("votes").doc(voteId).update({ open:false });
+}
+
+function loadVotes(){
+  voteList.innerHTML="";
+  db.collection("votes").orderBy("createdAt","desc")
+  .onSnapshot(snap=>{
+    voteList.innerHTML="";
+    snap.forEach(doc=>{
+      const v = doc.data();
+      const voteId = doc.id;
+
+      db.collection("votes").doc(voteId)
+      .collection("results").onSnapshot(rSnap=>{
+        let yes=0,no=0,maybe=0;
+        rSnap.forEach(r=>{
+          if(r.data().choice==="yes") yes++;
+          if(r.data().choice==="no") no++;
+          if(r.data().choice==="maybe") maybe++;
+        });
+
+        voteList.innerHTML += `
+          <div class="card">
+            <b>${v.title}</b><br>
+            <small>Status: ${v.open?"offen":"geschlossen"}</small><br><br>
+
+            ${v.open ? `
+              <button onclick="vote('${voteId}','yes')">✅ Ja</button>
+              <button onclick="vote('${voteId}','no')">❌ Nein</button>
+              <button onclick="vote('${voteId}','maybe')">⚪ Enthaltung</button>
+            ` : ""}
+
+            <p>Ja: ${yes} | Nein: ${no} | Enthaltung: ${maybe}</p>
+
+            ${(currentUser.isAdmin || currentUser.rank==="secretary") && v.open
+              ? `<button onclick="closeVote('${voteId}')">Abstimmung schließen</button>`
+              : ""
+            }
+          </div>
+        `;
+      });
+    });
+  });
+}
+</script>
+<!-- ================= ADMIN ================= -->
+<div id="adminBox" class="box hidden">
+  <h2>🔧 Admin – Benutzer & Rollen</h2>
+  <div id="adminUserList"></div>
+</div>
+
+<script>
+// ================= AUTH & ROLLEN =================
+let currentUser = null;
+
+function login(){
   auth.signInWithEmailAndPassword(
     loginEmail.value,
     loginPassword.value
   ).catch(e => loginError.innerText = e.message);
 }
 
-function logout() {
+function logout(){
   auth.signOut();
 }
 
-// ================= AUTH STATE =================
-auth.onAuthStateChanged(user => {
-  if (!user) {
+auth.onAuthStateChanged(user=>{
+  if(!user){
     loginView.classList.remove("hidden");
     dashboardView.classList.add("hidden");
     return;
@@ -190,36 +462,165 @@ auth.onAuthStateChanged(user => {
   loginView.classList.add("hidden");
   dashboardView.classList.remove("hidden");
 
-  db.collection("users").doc(user.uid).get().then(doc => {
-    const d = doc.data();
+  db.collection("users").doc(user.uid).get().then(doc=>{
+    currentUser = doc.data();
 
-    navUser.innerText = d.name + " (" + d.rank + ")";
+    // Profil
+    navUser.innerText = currentUser.name+" ("+currentUser.rank+")";
     profileBox.innerHTML = `
-      <strong>Name:</strong> ${d.name}<br>
-      <strong>Rang:</strong> ${d.rank}<br>
-      <strong>Mitglied seit:</strong> ${d.memberSince}
+      <b>Name:</b> ${currentUser.name}<br>
+      <b>Rang:</b> ${currentUser.rank}<br>
+      <b>Mitglied seit:</b> ${currentUser.memberSince}
     `;
 
-    // Admin
-    if (d.isAdmin === true) {
-      document.querySelectorAll(".role").forEach(e => e.classList.remove("hidden"));
-      adminBox.classList.remove("hidden");
-      return;
+    // ================= SICHTBARKEIT =================
+
+    // Vorstand Dashboard
+    if(
+      currentUser.isAdmin ||
+      ["secretary","treasurer","vice_president","president"].includes(currentUser.rank)
+    ){
+      boardDashboard.classList.remove("hidden");
+      loadDashboard();
     }
 
-    // Rollen anzeigen
-    if (d.rank === "hangaround") hangaroundBox.classList.remove("hidden");
-    if (d.rank === "prospect") prospectBox.classList.remove("hidden");
-    if (d.rank === "member") memberBox.classList.remove("hidden");
-    if (d.rank === "road_captain") roadCaptainBox.classList.remove("hidden");
-    if (d.rank === "sergeant_at_arms") saaBox.classList.remove("hidden");
-    if (d.rank === "secretary") secretaryBox.classList.remove("hidden");
-    if (d.rank === "treasurer") treasurerBox.classList.remove("hidden");
-    if (d.rank === "vice_president") vpBox.classList.remove("hidden");
-    if (d.rank === "president") presidentBox.classList.remove("hidden");
+    // Hangaround
+    if(currentUser.rank === "hangaround"){
+      hangaroundBox.classList.remove("hidden");
+    }
+
+    // Prospect
+    if(currentUser.rank === "prospect"){
+      prospectBox.classList.remove("hidden");
+      loadMyProspectRides();
+    }
+
+    // Road Captain
+    if(currentUser.rank === "road_captain"){
+      roadCaptainBox.classList.remove("hidden");
+    }
+
+    // Ausfahrten sichtbar ab Prospect
+    if(
+      ["prospect","member","road_captain","sergeant_at_arms",
+       "secretary","treasurer","vice_president","president"].includes(currentUser.rank)
+    ){
+      rideView.classList.remove("hidden");
+      loadRides();
+    }
+
+    // Bestätigungen (Secretary / SAA / Admin)
+    if(
+      currentUser.isAdmin ||
+      ["secretary","sergeant_at_arms"].includes(currentUser.rank)
+    ){
+      confirmBox.classList.remove("hidden");
+      loadConfirmations();
+    }
+
+    // Secretary
+    if(currentUser.rank === "secretary"){
+      secretaryBox.classList.remove("hidden");
+    }
+
+    // Treasurer
+    if(
+      currentUser.isAdmin ||
+      ["treasurer","vice_president","president","sergeant_at_arms","member"].includes(currentUser.rank)
+    ){
+      treasurerBox.classList.remove("hidden");
+      loadCash();
+    }
+
+    // Buchungsrecht
+    if(currentUser.isAdmin || currentUser.rank === "treasurer"){
+      cashForm.classList.remove("hidden");
+    }
+
+    // Historie nur Vorstand + Admin
+    if(
+      currentUser.isAdmin ||
+      ["treasurer","vice_president","president"].includes(currentUser.rank)
+    ){
+      cashHistoryBox.classList.remove("hidden");
+    }
+
+    // Abstimmungen
+    if(
+      currentUser.isAdmin ||
+      ["member","secretary","treasurer","sergeant_at_arms","vice_president","president"].includes(currentUser.rank)
+    ){
+      voteBox.classList.remove("hidden");
+      loadVotes();
+    }
+
+    if(currentUser.isAdmin || currentUser.rank === "secretary"){
+      voteCreateBox.classList.remove("hidden");
+    }
+
+    // Admin
+    if(currentUser.isAdmin){
+      adminBox.classList.remove("hidden");
+      loadAdminUsers();
+    }
   });
 });
+
+// ================= ADMIN USER VERWALTUNG =================
+function loadAdminUsers(){
+  adminUserList.innerHTML = "";
+  db.collection("users").onSnapshot(snap=>{
+    adminUserList.innerHTML = "";
+    snap.forEach(doc=>{
+      const u = doc.data();
+      adminUserList.innerHTML += `
+        <div class="card">
+          <b>${u.name}</b><br>
+          Rang:
+          <select onchange="updateUserRank('${doc.id}', this.value)">
+            <option value="${u.rank}">${u.rank}</option>
+            <option value="hangaround">hangaround</option>
+            <option value="prospect">prospect</option>
+            <option value="member">member</option>
+            <option value="road_captain">road_captain</option>
+            <option value="sergeant_at_arms">sergeant_at_arms</option>
+            <option value="secretary">secretary</option>
+            <option value="treasurer">treasurer</option>
+            <option value="vice_president">vice_president</option>
+            <option value="president">president</option>
+          </select>
+        </div>
+      `;
+    });
+  });
+}
+
+function updateUserRank(uid, rank){
+  db.collection("users").doc(uid).update({ rank });
+}
+
+// ================= MONATSBERICHT =================
+function generateMonthlyReport(){
+  const now = new Date();
+  const month = now.getMonth();
+  const year = now.getFullYear();
+  let sum = 0;
+
+  db.collection("cash").get().then(snap=>{
+    snap.forEach(doc=>{
+      const c = doc.data();
+      if(c.createdAt){
+        const d = c.createdAt.toDate();
+        if(d.getMonth()===month && d.getFullYear()===year){
+          sum += c.amount;
+        }
+      }
+    });
+    alert(`Monatsbericht ${month+1}/${year}: ${sum.toFixed(2)} €`);
+  });
+}
 </script>
 
 </body>
 </html>
+
