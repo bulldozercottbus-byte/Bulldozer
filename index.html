@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Club Intern</title>
 
-<!-- Firebase COMPAT (für GitHub Pages notwendig) -->
+<!-- Firebase COMPAT -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -18,11 +18,6 @@ body {
 }
 .hidden { display: none; }
 
-.center {
-  text-align: center;
-  margin-top: 120px;
-}
-
 nav {
   background: #000;
   padding: 12px;
@@ -31,55 +26,46 @@ nav {
   align-items: center;
 }
 
-nav button {
-  background: none;
-  border: none;
+nav span { font-weight: bold; }
+
+button {
+  background: #333;
   color: #fff;
+  border: none;
+  padding: 8px;
   cursor: pointer;
+}
+button:hover { background: #555; }
+
+input, textarea {
+  width: 100%;
+  background: #111;
+  color: #fff;
+  border: 1px solid #333;
+  padding: 6px;
+  margin-bottom: 10px;
 }
 
 .box {
   background: #1c1c1c;
-  padding: 20px;
-  margin: 20px;
+  padding: 15px;
+  margin: 15px;
   border-radius: 8px;
 }
 
-.admin {
-  border: 2px solid #a00;
-}
-
-input, select {
-  width: 100%;
-  padding: 8px;
-  margin-top: 6px;
-  margin-bottom: 12px;
-  background: #111;
-  border: 1px solid #333;
-  color: #fff;
-}
-
-button {
-  padding: 10px;
-  background: #333;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-}
-button:hover {
-  background: #555;
-}
+.admin { border: 2px solid #a00; }
+.role { border-left: 4px solid #444; }
 </style>
 </head>
 
 <body>
 
 <!-- LOGIN -->
-<div id="loginView" class="center">
+<div id="loginView" style="text-align:center;margin-top:120px;">
   <h1>Club Interner Bereich</h1>
   <input id="loginEmail" placeholder="E-Mail">
   <input id="loginPassword" type="password" placeholder="Passwort">
-  <button id="loginBtn">Login</button>
+  <button onclick="login()">Login</button>
   <p id="loginError" style="color:#f55;"></p>
 </div>
 
@@ -88,40 +74,86 @@ button:hover {
 
   <nav>
     <span id="navUser"></span>
-    <button id="logoutBtn">Logout</button>
+    <button onclick="logout()">Logout</button>
   </nav>
 
+  <!-- PROFIL -->
   <div id="profileBox" class="box"></div>
 
-  <!-- ADMIN PANEL -->
-  <div id="adminPanel" class="box admin hidden">
-    <h2>🔧 Admin – User anlegen</h2>
+  <!-- HANGAROUND -->
+  <div id="hangaroundBox" class="box role hidden">
+    <h3>🟤 Hangaround</h3>
+    <p>Eigene Notizen & Übersicht.</p>
+    <textarea placeholder="Eigene Notizen..."></textarea>
+  </div>
 
-    <input id="newEmail" placeholder="E-Mail">
-    <input id="newPassword" type="password" placeholder="Start-Passwort">
-    <input id="newName" placeholder="Name / Spitzname">
+  <!-- PROSPECT -->
+  <div id="prospectBox" class="box role hidden">
+    <h3>🟡 Prospect</h3>
+    <p>Ausfahrten dokumentieren:</p>
+    <input type="date">
+    <textarea placeholder="Welche Ausfahrt?"></textarea>
+  </div>
 
-    <select id="newRank">
-      <option value="hangaround">Hangaround</option>
-      <option value="prospect">Prospect</option>
-      <option value="member">Member</option>
-      <option value="road_captain">Road Captain</option>
-      <option value="sergeant_at_arms">Sergeant-at-Arms</option>
-      <option value="secretary">Secretary</option>
-      <option value="treasurer">Treasurer</option>
-      <option value="vice_president">Vice President</option>
-      <option value="president">President</option>
-    </select>
+  <!-- MEMBER -->
+  <div id="memberBox" class="box role hidden">
+    <h3>🟢 Member</h3>
+    <p>Abstimmungen & Meeting-Notizen</p>
+    <textarea placeholder="Meeting / Abstimmung"></textarea>
+  </div>
 
-    <input id="newSince" type="date">
-    <button id="createUserBtn">User erstellen</button>
-    <p id="adminMsg"></p>
+  <!-- ROAD CAPTAIN -->
+  <div id="roadCaptainBox" class="box role hidden">
+    <h3>🔵 Road Captain</h3>
+    <p>Ausfahrten planen</p>
+    <textarea placeholder="Route / Planung"></textarea>
+  </div>
+
+  <!-- SERGEANT AT ARMS -->
+  <div id="saaBox" class="box role hidden">
+    <h3>🛡️ Sergeant-at-Arms</h3>
+    <p>Disziplin / Meldungen</p>
+    <textarea placeholder="Meldung / Vorfall"></textarea>
+  </div>
+
+  <!-- SECRETARY -->
+  <div id="secretaryBox" class="box role hidden">
+    <h3>📝 Secretary</h3>
+    <p>Protokolle & Bestätigungen</p>
+    <textarea placeholder="Protokoll"></textarea>
+  </div>
+
+  <!-- TREASURER -->
+  <div id="treasurerBox" class="box role hidden">
+    <h3>💰 Treasurer</h3>
+    <p>Clubkasse & Beiträge</p>
+    <textarea placeholder="Ein-/Ausgaben"></textarea>
+  </div>
+
+  <!-- VICE PRESIDENT -->
+  <div id="vpBox" class="box role hidden">
+    <h3>👑 Vice President</h3>
+    <p>Leitungs- & Clubinfos</p>
+    <textarea placeholder="Ankündigung"></textarea>
+  </div>
+
+  <!-- PRESIDENT -->
+  <div id="presidentBox" class="box role hidden">
+    <h3>👑 President</h3>
+    <p>Finale Entscheidungen</p>
+    <textarea placeholder="Entscheidung"></textarea>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="adminBox" class="box admin hidden">
+    <h3>🔧 ADMIN – VOLLER ZUGRIFF</h3>
+    <p>Admin kann alles sehen & bearbeiten.</p>
   </div>
 
 </div>
 
 <script>
-// ================= FIREBASE CONFIG =================
+// ================= FIREBASE =================
 const firebaseConfig = {
   apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
   authDomain: "bulldozer-f8a26.firebaseapp.com",
@@ -136,85 +168,55 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ================= LOGIN =================
-document.getElementById("loginBtn").addEventListener("click", () => {
-  document.getElementById("loginError").innerText = "";
-
+function login() {
   auth.signInWithEmailAndPassword(
-    loginEmail.value.trim(),
+    loginEmail.value,
     loginPassword.value
-  ).catch(err => {
-    document.getElementById("loginError").innerText = err.message;
-  });
-});
+  ).catch(e => loginError.innerText = e.message);
+}
 
-// ================= LOGOUT =================
-document.getElementById("logoutBtn").addEventListener("click", () => {
+function logout() {
   auth.signOut();
-});
+}
 
 // ================= AUTH STATE =================
 auth.onAuthStateChanged(user => {
   if (!user) {
-    document.getElementById("loginView").classList.remove("hidden");
-    document.getElementById("dashboardView").classList.add("hidden");
+    loginView.classList.remove("hidden");
+    dashboardView.classList.add("hidden");
     return;
   }
 
-  document.getElementById("loginView").classList.add("hidden");
-  document.getElementById("dashboardView").classList.remove("hidden");
+  loginView.classList.add("hidden");
+  dashboardView.classList.remove("hidden");
 
-  db.collection("users").doc(user.uid).get()
-    .then(doc => {
-      if (!doc.exists) {
-        alert("FEHLER: Kein User-Dokument in Firestore");
-        return;
-      }
+  db.collection("users").doc(user.uid).get().then(doc => {
+    const d = doc.data();
 
-      const d = doc.data();
+    navUser.innerText = d.name + " (" + d.rank + ")";
+    profileBox.innerHTML = `
+      <strong>Name:</strong> ${d.name}<br>
+      <strong>Rang:</strong> ${d.rank}<br>
+      <strong>Mitglied seit:</strong> ${d.memberSince}
+    `;
 
-      document.getElementById("navUser").innerText =
-        d.name + " (" + d.rank + ")";
+    // Admin
+    if (d.isAdmin === true) {
+      document.querySelectorAll(".role").forEach(e => e.classList.remove("hidden"));
+      adminBox.classList.remove("hidden");
+      return;
+    }
 
-      document.getElementById("profileBox").innerHTML = `
-        <strong>Name:</strong> ${d.name}<br>
-        <strong>Rang:</strong> ${d.rank}<br>
-        <strong>Mitglied seit:</strong> ${d.memberSince}
-      `;
-
-      if (d.isAdmin === true) {
-        document.getElementById("adminPanel").classList.remove("hidden");
-      } else {
-        document.getElementById("adminPanel").classList.add("hidden");
-      }
-    })
-    .catch(err => {
-      alert("Firestore-Fehler: " + err.message);
-    });
-});
-
-// ================= ADMIN: USER ERSTELLEN =================
-document.getElementById("createUserBtn").addEventListener("click", () => {
-  adminMsg.innerText = "";
-
-  auth.createUserWithEmailAndPassword(
-    newEmail.value.trim(),
-    newPassword.value
-  )
-  .then(cred => {
-    return db.collection("users").doc(cred.user.uid).set({
-      name: newName.value,
-      rank: newRank.value,
-      memberSince: newSince.value,
-      isAdmin: false,
-      active: true,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  })
-  .then(() => {
-    adminMsg.innerText = "User erfolgreich erstellt ✅";
-  })
-  .catch(err => {
-    adminMsg.innerText = err.message;
+    // Rollen anzeigen
+    if (d.rank === "hangaround") hangaroundBox.classList.remove("hidden");
+    if (d.rank === "prospect") prospectBox.classList.remove("hidden");
+    if (d.rank === "member") memberBox.classList.remove("hidden");
+    if (d.rank === "road_captain") roadCaptainBox.classList.remove("hidden");
+    if (d.rank === "sergeant_at_arms") saaBox.classList.remove("hidden");
+    if (d.rank === "secretary") secretaryBox.classList.remove("hidden");
+    if (d.rank === "treasurer") treasurerBox.classList.remove("hidden");
+    if (d.rank === "vice_president") vpBox.classList.remove("hidden");
+    if (d.rank === "president") presidentBox.classList.remove("hidden");
   });
 });
 </script>
