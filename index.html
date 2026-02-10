@@ -2,186 +2,185 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Club Interner Bereich</title>
+<title>Club Intern</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
-/* ===== GRUNDSTIL ===== */
 body {
   margin: 0;
-  background: #111;
+  background: #0f0f0f;
   color: #eee;
   font-family: Arial, sans-serif;
 }
-
 nav {
   background: #000;
   padding: 12px;
   display: flex;
   gap: 15px;
 }
-
 nav a, nav button {
   color: #fff;
-  text-decoration: none;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 14px;
 }
-
-.hidden {
-  display: none;
-}
-
-.center {
-  text-align: center;
-  margin-top: 150px;
-}
+.hidden { display: none; }
+.center { text-align: center; margin-top: 120px; }
 
 .box {
-  background: #1e1e1e;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-}
-
-#profile {
-  background: #1b1b1b;
-  padding: 15px;
+  background: #1c1c1c;
+  padding: 20px;
   margin: 20px;
   border-radius: 8px;
 }
 
-.content {
-  padding: 20px;
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  background: #111;
+  border: 1px solid #333;
+  color: #fff;
 }
 
-.hint {
-  font-size: 13px;
-  color: #aaa;
-  margin-top: 15px;
+button {
+  padding: 10px;
+  background: #333;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+button:hover { background: #555; }
+
+.admin {
+  border: 2px solid #a00;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ===== LOGIN SEITE ===== -->
-<div id="loginPage" class="center">
-  <h1>Interner Clubbereich</h1>
-  <p>Zugang nur für registrierte Mitglieder</p>
+<!-- LOGIN -->
+<div id="login" class="center">
+  <h1>Club Interner Bereich</h1>
+  <input id="loginEmail" placeholder="E-Mail">
+  <input id="loginPassword" type="password" placeholder="Passwort">
   <button onclick="login()">Login</button>
-  <p class="hint">Accounts werden ausschließlich vom Administrator erstellt.</p>
 </div>
 
-<!-- ===== DASHBOARD ===== -->
+<!-- DASHBOARD -->
 <div id="dashboard" class="hidden">
-
   <nav>
-    <a href="#" onclick="showDashboard()">Dashboard</a>
-    <a href="#" onclick="showRankInfo()">Rang-Info</a>
+    <span id="navUser"></span>
     <button onclick="logout()">Logout</button>
   </nav>
 
-  <div id="profile"></div>
+  <div id="profile" class="box"></div>
 
-  <div class="content" id="dashboardContent">
-    <div class="box">
-      <h3>📝 Notizen</h3>
-      <p>Eigene Notizen (je nach Rang erweitert).</p>
-    </div>
+  <!-- ADMIN MASKE -->
+  <div id="adminPanel" class="box admin hidden">
+    <h2>🔧 Admin-Bereich – User erstellen</h2>
 
-    <div class="box">
-      <h3>🏍️ Ausfahrten</h3>
-      <p>Ausfahrten dokumentieren und einsehen.</p>
-    </div>
+    <input id="newEmail" placeholder="E-Mail">
+    <input id="newPassword" placeholder="Start-Passwort">
+    <input id="newName" placeholder="Name / Spitzname">
 
-    <div class="box">
-      <h3>💰 Clubkasse</h3>
-      <p><strong>Kassenstand:</strong> 0 €</p>
-      <small>Alle ab Member sehen nur den Betrag.</small>
-    </div>
+    <select id="newRank">
+      <option value="hangaround">Hangaround</option>
+      <option value="prospect">Prospect</option>
+      <option value="member">Member</option>
+      <option value="road_captain">Road Captain</option>
+      <option value="sergeant_at_arms">Sergeant-at-Arms</option>
+      <option value="secretary">Secretary</option>
+      <option value="treasurer">Treasurer</option>
+      <option value="vice_president">Vice President</option>
+      <option value="president">President</option>
+    </select>
+
+    <input id="newSince" type="date">
+
+    <button onclick="createUser()">User anlegen</button>
+    <p id="adminMsg"></p>
   </div>
-
-  <!-- ===== RANG INFO ===== -->
-  <div class="content hidden" id="rankInfo">
-
-    <h1>ℹ️ Rang-Info – Hierarchie & Aufgaben</h1>
-
-    <h2>Hierarchische Ränge (Vorstand)</h2>
-
-    <h3>President (Präsident)</h3>
-    <p>Chef eines Charters oder des gesamten Clubs. Trifft die finalen Entscheidungen.</p>
-
-    <h3>Vice President (Vizepräsident)</h3>
-    <p>Stellvertreter des Präsidenten. Übernimmt die Leitung bei Abwesenheit.</p>
-
-    <h3>Treasurer (Schatzmeister)</h3>
-    <p>Verwaltet die Clubkasse, Beiträge, Einnahmen und Ausgaben.</p>
-
-    <h3>Secretary (Sekretär)</h3>
-    <p>Verantwortlich für Protokolle, Dokumentation und interne Kommunikation.</p>
-
-    <h3>Sergeant-at-Arms (SAA)</h3>
-    <p>Verantwortlich für Disziplin, Ordnung und Sicherheit.</p>
-
-    <h3>Road Captain</h3>
-    <p>Plant und organisiert Ausfahrten, bestimmt Route und Ordnung.</p>
-
-    <h2>Mitgliederstatus</h2>
-
-    <h3>Full Member</h3>
-    <p>Vollwertiges Mitglied mit allen Rechten und Pflichten.</p>
-
-    <h3>Prospect</h3>
-    <p>Mitglied auf Probe. Muss sich über längere Zeit beweisen.</p>
-
-    <h3>Hangaround</h3>
-    <p>Anwärter, lernt den Club kennen und unterstützt bei einfachen Aufgaben.</p>
-
-    <p class="hint">Diese Übersicht ist für alle Mitglieder sichtbar.</p>
-  </div>
-
 </div>
 
 <script>
-/* ===== DEMO USER (SPÄTER FIREBASE) ===== */
-const currentUser = {
-  name: "Demo User",
-  rank: "Member",
-  memberSince: "01.01.2023"
+// 🔥 FIREBASE CONFIG (HIER DEINE DATEN EINTRAGEN)
+const firebaseConfig = {
+  apiKey: "DEIN_API_KEY",
+  authDomain: "DEIN_PROJECT.firebaseapp.com",
+  projectId: "DEIN_PROJECT_ID"
 };
 
-/* ===== LOGIN / LOGOUT ===== */
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// LOGIN
 function login() {
-  document.getElementById("loginPage").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
-  loadProfile();
+  auth.signInWithEmailAndPassword(
+    loginEmail.value,
+    loginPassword.value
+  ).catch(e => alert(e.message));
 }
 
+// LOGOUT
 function logout() {
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("loginPage").classList.remove("hidden");
+  auth.signOut().then(() => location.reload());
 }
 
-/* ===== PROFIL ===== */
-function loadProfile() {
-  document.getElementById("profile").innerHTML = `
-    <strong>Name:</strong> ${currentUser.name}<br>
-    <strong>Rang:</strong> ${currentUser.rank}<br>
-    <strong>Mitglied seit:</strong> ${currentUser.memberSince}
-  `;
-}
+// AUTH STATE
+auth.onAuthStateChanged(user => {
+  if (!user) return;
 
-/* ===== NAVIGATION ===== */
-function showDashboard() {
-  document.getElementById("dashboardContent").classList.remove("hidden");
-  document.getElementById("rankInfo").classList.add("hidden");
-}
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
 
-function showRankInfo() {
-  document.getElementById("dashboardContent").classList.add("hidden");
-  document.getElementById("rankInfo").classList.remove("hidden");
+  db.collection("users").doc(user.uid).get().then(doc => {
+    const d = doc.data();
+
+    navUser.innerText = d.name + " (" + d.rank + ")";
+
+    profile.innerHTML = `
+      <strong>Name:</strong> ${d.name}<br>
+      <strong>Rang:</strong> ${d.rank}<br>
+      <strong>Mitglied seit:</strong> ${d.memberSince}
+    `;
+
+    if (d.isAdmin === true) {
+      adminPanel.classList.remove("hidden");
+    }
+  });
+});
+
+// ADMIN: USER ERSTELLEN
+function createUser() {
+  const email = newEmail.value;
+  const pass = newPassword.value;
+  const name = newName.value;
+  const rank = newRank.value;
+  const since = newSince.value;
+
+  auth.createUserWithEmailAndPassword(email, pass)
+    .then(cred => {
+      return db.collection("users").doc(cred.user.uid).set({
+        name: name,
+        rank: rank,
+        memberSince: since,
+        isAdmin: false,
+        active: true,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    })
+    .then(() => {
+      adminMsg.innerText = "User erfolgreich erstellt ✅";
+    })
+    .catch(e => adminMsg.innerText = e.message);
 }
 </script>
 
