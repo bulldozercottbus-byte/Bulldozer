@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Club Intern</title>
 
-<!-- Firebase -->
+<!-- Firebase COMPAT (WICHTIG für GitHub Pages) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -22,7 +22,8 @@ nav {
   display: flex;
   gap: 15px;
 }
-nav a, nav button {
+nav span { font-weight: bold; }
+nav button {
   color: #fff;
   background: none;
   border: none;
@@ -82,12 +83,12 @@ button:hover { background: #555; }
 
   <div id="profile" class="box"></div>
 
-  <!-- ADMIN MASKE -->
+  <!-- ADMIN PANEL -->
   <div id="adminPanel" class="box admin hidden">
-    <h2>🔧 Admin-Bereich – User erstellen</h2>
+    <h2>🔧 Admin – User anlegen</h2>
 
     <input id="newEmail" placeholder="E-Mail">
-    <input id="newPassword" placeholder="Start-Passwort">
+    <input id="newPassword" type="password" placeholder="Start-Passwort">
     <input id="newName" placeholder="Name / Spitzname">
 
     <select id="newRank">
@@ -104,19 +105,23 @@ button:hover { background: #555; }
 
     <input id="newSince" type="date">
 
-    <button onclick="createUser()">User anlegen</button>
+    <button onclick="createUser()">User erstellen</button>
     <p id="adminMsg"></p>
   </div>
 </div>
 
 <script>
-// 🔥 FIREBASE CONFIG (HIER DEINE DATEN EINTRAGEN)
+// 🔥 DEINE FIREBASE CONFIG (KORREKT)
 const firebaseConfig = {
-  apiKey: "DEIN_API_KEY",
-  authDomain: "DEIN_PROJECT.firebaseapp.com",
-  projectId: "DEIN_PROJECT_ID"
+  apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
+  authDomain: "bulldozer-f8a26.firebaseapp.com",
+  projectId: "bulldozer-f8a26",
+  storageBucket: "bulldozer-f8a26.firebasestorage.app",
+  messagingSenderId: "576318762826",
+  appId: "1:576318762826:web:7d812e32e152d64d425bb3"
 };
 
+// INITIALIZE
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -138,12 +143,16 @@ function logout() {
 auth.onAuthStateChanged(user => {
   if (!user) return;
 
-  document.getElementById("login").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
+  login.classList.add("hidden");
+  dashboard.classList.remove("hidden");
 
   db.collection("users").doc(user.uid).get().then(doc => {
-    const d = doc.data();
+    if (!doc.exists) {
+      alert("Kein User-Dokument gefunden");
+      return;
+    }
 
+    const d = doc.data();
     navUser.innerText = d.name + " (" + d.rank + ")";
 
     profile.innerHTML = `
@@ -160,27 +169,21 @@ auth.onAuthStateChanged(user => {
 
 // ADMIN: USER ERSTELLEN
 function createUser() {
-  const email = newEmail.value;
-  const pass = newPassword.value;
-  const name = newName.value;
-  const rank = newRank.value;
-  const since = newSince.value;
-
-  auth.createUserWithEmailAndPassword(email, pass)
-    .then(cred => {
-      return db.collection("users").doc(cred.user.uid).set({
-        name: name,
-        rank: rank,
-        memberSince: since,
-        isAdmin: false,
-        active: true,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    })
-    .then(() => {
-      adminMsg.innerText = "User erfolgreich erstellt ✅";
-    })
-    .catch(e => adminMsg.innerText = e.message);
+  auth.createUserWithEmailAndPassword(
+    newEmail.value,
+    newPassword.value
+  ).then(cred => {
+    return db.collection("users").doc(cred.user.uid).set({
+      name: newName.value,
+      rank: newRank.value,
+      memberSince: newSince.value,
+      isAdmin: false,
+      active: true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }).then(() => {
+    adminMsg.innerText = "User erfolgreich erstellt ✅";
+  }).catch(e => adminMsg.innerText = e.message);
 }
 </script>
 
