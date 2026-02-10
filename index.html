@@ -3,41 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Club Intern – Master</title>
+<title>Club Intern – Final</title>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
-:root{
-  --bg:#0c0c0c;
-  --card:#1c1c1c;
-  --accent:#b00000;
-  --ok:#1faa59;
-  --warn:#f5a623;
-}
-body{margin:0;background:var(--bg);color:#eee;font-family:Arial}
+body{margin:0;background:#0c0c0c;color:#eee;font-family:Arial}
 .hidden{display:none}
 nav{background:#000;padding:12px;display:flex;justify-content:space-between;align-items:center}
 button{background:#333;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
-button.primary{background:var(--accent)}
-button.ok{background:var(--ok)}
-button.warn{background:var(--warn);color:#000}
-button:hover{opacity:.9}
-.box{background:var(--card);margin:12px;padding:12px;border-radius:10px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
-.card{background:#222;padding:12px;border-radius:8px}
-input,textarea,select{
-  width:100%;background:#111;color:#fff;border:1px solid #333;
-  padding:8px;border-radius:6px;margin-bottom:8px
-}
-h2,h3{margin-top:0}
-small{color:#aaa}
-.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#333;margin-right:6px}
-.tag.ok{background:var(--ok)}
-.tag.warn{background:var(--warn);color:#000}
+button.primary{background:#b00000}
+button.ok{background:#1faa59}
+button.warn{background:#f5a623;color:#000}
+.box{background:#1c1c1c;margin:12px;padding:12px;border-radius:10px}
+.card{background:#222;padding:12px;border-radius:8px;margin-bottom:8px}
+input,textarea,select{width:100%;background:#111;color:#fff;border:1px solid #333;padding:8px;border-radius:6px;margin-bottom:8px}
+table{width:100%;border-collapse:collapse}
+td,th{border-bottom:1px solid #333;padding:6px}
 </style>
 </head>
 
@@ -66,392 +50,127 @@ small{color:#aaa}
 
 <div id="profileBox" class="box"></div>
 
-<!-- VORSTANDS DASHBOARD -->
+<!-- DASHBOARD -->
 <div id="boardDashboard" class="box hidden">
   <h2>📊 Übersicht</h2>
-  <div class="grid">
-    <div class="card">
-      <h3>💰 Clubkasse</h3>
-      <p><b>Stand:</b> <span id="dashCash">0</span> €</p>
-      <small id="dashCashInfo"></small>
-    </div>
-    <div class="card">
-      <h3>🟡 Prospect</h3>
-      <p><span id="dashProspects">0</span> offen</p>
-    </div>
-    <div class="card">
-      <h3>🗳️ Abstimmungen</h3>
-      <p><span id="dashVotes">0</span> offen</p>
-    </div>
-    <div class="card">
-      <h3>🏍️ Letzte Ausfahrt</h3>
-      <small id="dashRide">–</small>
-    </div>
-  </div>
+  <p>💰 Clubkasse: <b><span id="dashCash">0</span> €</b></p>
+  <p>🟡 Offene Prospects: <b><span id="dashProspects">0</span></b></p>
+  <p>🗳️ Offene Abstimmungen: <b><span id="dashVotes">0</span></b></p>
+  <p>🏍️ Letzte Ausfahrt: <b><span id="dashRide">–</span></b></p>
 </div>
-  <!-- ================= HANGAROUND ================= -->
+
+<!-- HANGAROUND -->
 <div id="hangaroundBox" class="box hidden">
   <h2>🟤 Hangaround</h2>
-  <p>Eigene Notizen (privat)</p>
   <textarea id="hangNotes"></textarea>
-  <button onclick="saveHangNotes()">Speichern</button>
+  <button onclick="saveNotes('hang')">Speichern</button>
 </div>
 
-<!-- ================= PROSPECT ================= -->
+<!-- PROSPECT -->
 <div id="prospectBox" class="box hidden">
   <h2>🟡 Prospect</h2>
-
-  <h3>Eigene Notizen</h3>
   <textarea id="prospectNotes"></textarea>
-  <button onclick="saveProspectNotes()">Speichern</button>
+  <button onclick="saveNotes('prospect')">Speichern</button>
 
   <h3>Ausfahrt eintragen</h3>
   <input type="date" id="pRideDate">
-  <textarea id="pRideText" placeholder="Welche Ausfahrt?"></textarea>
+  <textarea id="pRideText"></textarea>
   <button onclick="addProspectRide()">Eintragen</button>
 
-  <h3>Status meiner Ausfahrten</h3>
   <div id="prospectRideList"></div>
 </div>
 
-<!-- ================= ROAD CAPTAIN ================= -->
+<!-- ROAD CAPTAIN -->
 <div id="roadCaptainBox" class="box hidden">
-  <h2>🏍️ Road Captain – Ausfahrten planen</h2>
-  <input id="rideTitle" placeholder="Titel / Strecke">
-  <input id="rideTime" placeholder="Datum & Uhrzeit">
-  <textarea id="ridePlan" placeholder="Route, Zeiten, Hinweise"></textarea>
-  <button onclick="addRide()">Ausfahrt speichern</button>
+  <h2>🏍️ Road Captain</h2>
+  <input id="rideTitle" placeholder="Titel">
+  <input id="rideTime" placeholder="Datum/Uhrzeit">
+  <textarea id="ridePlan"></textarea>
+  <button onclick="addRide()">Speichern</button>
 </div>
 
-<!-- ================= AUSFAHRTEN (ALLE AB PROSPECT) ================= -->
 <div id="rideView" class="box hidden">
-  <h2>📍 Geplante Ausfahrten</h2>
+  <h2>📍 Ausfahrten</h2>
   <div id="rideList"></div>
 </div>
 
-<!-- ================= BESTÄTIGUNGEN ================= -->
+<!-- CONFIRM -->
 <div id="confirmBox" class="box hidden">
-  <h2>✅ Prospect-Ausfahrten bestätigen</h2>
+  <h2>✅ Prospect bestätigen</h2>
   <div id="confirmList"></div>
 </div>
 
-<script>
-// ===== HANGAROUND =====
-function saveHangNotes(){
-  db.collection("notes").doc(auth.currentUser.uid)
-  .set({text:hangNotes.value},{merge:true});
-}
-
-// ===== PROSPECT =====
-function saveProspectNotes(){
-  db.collection("notes").doc(auth.currentUser.uid)
-  .set({text:prospectNotes.value},{merge:true});
-}
-
-function addProspectRide(){
-  db.collection("prospect_rides").add({
-    userId: auth.currentUser.uid,
-    name: currentUser.name,
-    date: pRideDate.value,
-    text: pRideText.value,
-    status: "offen",
-    checkedBy: "",
-    comment: "",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-}
-
-function loadMyProspectRides(){
-  prospectRideList.innerHTML="";
-  db.collection("prospect_rides")
-  .where("userId","==",auth.currentUser.uid)
-  .onSnapshot(snap=>{
-    prospectRideList.innerHTML="";
-    snap.forEach(doc=>{
-      const r=doc.data();
-      prospectRideList.innerHTML+=`
-        <div class="card">
-          <b>${r.date}</b><br>
-          ${r.text}<br>
-          <small>Status: ${r.status}</small><br>
-          ${r.comment?`<small>Kommentar: ${r.comment}</small>`:""}
-        </div>
-      `;
-    });
-  });
-}
-
-// ===== ROAD CAPTAIN =====
-function addRide(){
-  db.collection("rides").add({
-    title: rideTitle.value,
-    time: rideTime.value,
-    plan: ridePlan.value,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-}
-
-function loadRides(){
-  rideList.innerHTML="";
-  db.collection("rides").orderBy("createdAt","desc")
-  .onSnapshot(snap=>{
-    rideList.innerHTML="";
-    snap.forEach(doc=>{
-      const r=doc.data();
-      rideList.innerHTML+=`
-        <div class="card">
-          <b>${r.title}</b><br>
-          ${r.time}<br>
-          <small>${r.plan}</small>
-        </div>
-      `;
-    });
-  });
-}
-
-// ===== BESTÄTIGUNGEN =====
-function loadConfirmations(){
-  confirmList.innerHTML="";
-  db.collection("prospect_rides")
-  .where("status","==","offen")
-  .onSnapshot(snap=>{
-    confirmList.innerHTML="";
-    snap.forEach(doc=>{
-      const r=doc.data();
-      confirmList.innerHTML+=`
-        <div class="card">
-          <b>${r.name}</b> – ${r.date}<br>
-          ${r.text}<br>
-          <input id="c_${doc.id}" placeholder="Kommentar">
-          <button class="ok" onclick="confirmRide('${doc.id}',true)">Bestätigen</button>
-          <button class="warn" onclick="confirmRide('${doc.id}',false)">Ablehnen</button>
-        </div>
-      `;
-    });
-  });
-}
-
-function confirmRide(id,ok){
-  db.collection("prospect_rides").doc(id).update({
-    status: ok?"bestätigt":"abgelehnt",
-    checkedBy: currentUser.name,
-    comment: document.getElementById("c_"+id).value
-  });
-}
-</script>
-<!-- ================= SECRETARY ================= -->
+<!-- SECRETARY -->
 <div id="secretaryBox" class="box hidden">
-  <h2>📝 Secretary – Protokolle & Dokumentation</h2>
-
-  <h3>Besprechungsprotokoll</h3>
-  <textarea id="secMeeting"></textarea>
-  <button onclick="saveSecretary('meeting')">Speichern</button>
-
-  <h3>Member-Tracking / Änderungen</h3>
-  <textarea id="secMember"></textarea>
-  <button onclick="saveSecretary('member')">Speichern</button>
-
-  <h3>Allgemeine Dokumentation</h3>
-  <textarea id="secDoc"></textarea>
-  <button onclick="saveSecretary('doc')">Speichern</button>
+  <h2>📝 Secretary</h2>
+  <textarea id="secText"></textarea>
+  <button onclick="saveSecretary()">Speichern</button>
 </div>
 
-<!-- ================= TREASURER / CLUBKASSE ================= -->
+<!-- TREASURER -->
 <div id="treasurerBox" class="box hidden">
   <h2>💰 Clubkasse</h2>
 
-  <!-- Buchung (nur Treasurer & Admin) -->
   <div id="cashForm" class="hidden">
     <select id="cashType">
       <option value="einnahme">Einnahme</option>
       <option value="ausgabe">Ausgabe</option>
       <option value="support">Support</option>
     </select>
-    <input id="cashAmount" placeholder="Betrag (z.B. 50 oder -20)">
+    <input id="cashAmount" placeholder="Betrag">
     <input id="cashDesc" placeholder="Beschreibung">
     <button onclick="addCash()">Buchen</button>
   </div>
 
-  <p><b>Gesamtstand:</b> <span id="cashTotal">0</span> €</p>
+  <p><b>Stand:</b> <span id="cashTotal">0</span> €</p>
 
-  <!-- Historie (Vorstand & Admin) -->
   <div id="cashHistoryBox" class="hidden">
-    <h3>📜 Historie</h3>
-    <table style="width:100%">
+    <table>
       <thead>
-        <tr>
-          <th>Datum</th>
-          <th>Typ</th>
-          <th>Betrag</th>
-          <th>Beschreibung</th>
-          <th>Von</th>
-        </tr>
+        <tr><th>Datum</th><th>Typ</th><th>Betrag</th><th>Text</th><th>Von</th></tr>
       </thead>
       <tbody id="cashHistory"></tbody>
     </table>
   </div>
 </div>
 
-<!-- ================= ABSTIMMUNGEN ================= -->
+<!-- VOTES -->
 <div id="voteBox" class="box hidden">
   <h2>🗳️ Abstimmungen</h2>
-
-  <!-- Erstellen (Secretary / Admin) -->
   <div id="voteCreateBox" class="hidden">
-    <input id="voteTitle" placeholder="Abstimmungsthema">
-    <button onclick="createVote()">Abstimmung erstellen</button>
+    <input id="voteTitle" placeholder="Thema">
+    <button onclick="createVote()">Erstellen</button>
   </div>
-
   <div id="voteList"></div>
 </div>
 
-<script>
-// ===== SECRETARY =====
-function saveSecretary(type){
-  const text =
-    type==="meeting" ? secMeeting.value :
-    type==="member"  ? secMember.value  :
-                        secDoc.value;
-
-  db.collection("secretary_docs").add({
-    type,
-    text,
-    by: currentUser.name,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-}
-
-// ===== CLUBKASSE =====
-function addCash(){
-  const amount = Number(cashAmount.value);
-  if(!amount){ alert("Ungültiger Betrag"); return; }
-
-  db.collection("cash").add({
-    amount,
-    type: cashType.value,
-    desc: cashDesc.value,
-    by: currentUser.name,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  cashAmount.value="";
-  cashDesc.value="";
-}
-
-function loadCash(){
-  let total = 0;
-  cashHistory.innerHTML="";
-
-  db.collection("cash").orderBy("createdAt","desc")
-  .onSnapshot(snap=>{
-    total = 0;
-    cashHistory.innerHTML="";
-    snap.forEach(doc=>{
-      const c = doc.data();
-      total += c.amount;
-
-      if(!cashHistoryBox.classList.contains("hidden")){
-        const d = c.createdAt ? c.createdAt.toDate().toLocaleDateString() : "";
-        cashHistory.innerHTML += `
-          <tr>
-            <td>${d}</td>
-            <td>${c.type}</td>
-            <td>${c.amount} €</td>
-            <td>${c.desc}</td>
-            <td>${c.by}</td>
-          </tr>
-        `;
-      }
-    });
-    cashTotal.innerText = total.toFixed(2);
-  });
-}
-
-// ===== ABSTIMMUNGEN =====
-function createVote(){
-  if(!voteTitle.value) return;
-  db.collection("votes").add({
-    title: voteTitle.value,
-    open: true,
-    createdBy: currentUser.name,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-  voteTitle.value="";
-}
-
-function vote(voteId, choice){
-  db.collection("votes").doc(voteId)
-  .collection("results").doc(auth.currentUser.uid)
-  .set({ choice });
-}
-
-function closeVote(voteId){
-  db.collection("votes").doc(voteId).update({ open:false });
-}
-
-function loadVotes(){
-  voteList.innerHTML="";
-  db.collection("votes").orderBy("createdAt","desc")
-  .onSnapshot(snap=>{
-    voteList.innerHTML="";
-    snap.forEach(doc=>{
-      const v = doc.data();
-      const voteId = doc.id;
-
-      db.collection("votes").doc(voteId)
-      .collection("results").onSnapshot(rSnap=>{
-        let yes=0,no=0,maybe=0;
-        rSnap.forEach(r=>{
-          if(r.data().choice==="yes") yes++;
-          if(r.data().choice==="no") no++;
-          if(r.data().choice==="maybe") maybe++;
-        });
-
-        voteList.innerHTML += `
-          <div class="card">
-            <b>${v.title}</b><br>
-            <small>Status: ${v.open?"offen":"geschlossen"}</small><br><br>
-
-            ${v.open ? `
-              <button onclick="vote('${voteId}','yes')">✅ Ja</button>
-              <button onclick="vote('${voteId}','no')">❌ Nein</button>
-              <button onclick="vote('${voteId}','maybe')">⚪ Enthaltung</button>
-            ` : ""}
-
-            <p>Ja: ${yes} | Nein: ${no} | Enthaltung: ${maybe}</p>
-
-            ${(currentUser.isAdmin || currentUser.rank==="secretary") && v.open
-              ? `<button onclick="closeVote('${voteId}')">Abstimmung schließen</button>`
-              : ""
-            }
-          </div>
-        `;
-      });
-    });
-  });
-}
-  
-</script>
-<!-- ================= ADMIN ================= -->
+<!-- ADMIN -->
 <div id="adminBox" class="box hidden">
-  <h2>🔧 Admin – Benutzer & Rollen</h2>
+  <h2>🔧 Admin</h2>
   <div id="adminUserList"></div>
 </div>
 
+</div>
+
 <script>
-// ================= AUTH & ROLLEN =================
+// ================= FIREBASE =================
+const firebaseConfig = {
+  apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
+  authDomain: "bulldozer-f8a26.firebaseapp.com",
+  projectId: "bulldozer-f8a26"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
 let currentUser = null;
 
+// ================= AUTH =================
 function login(){
-  auth.signInWithEmailAndPassword(
-    loginEmail.value,
-    loginPassword.value
-  ).catch(e => loginError.innerText = e.message);
+  auth.signInWithEmailAndPassword(loginEmail.value, loginPassword.value)
+  .catch(e=>loginError.innerText=e.message);
 }
-
-function logout(){
-  auth.signOut();
-}
+function logout(){ auth.signOut(); }
 
 auth.onAuthStateChanged(user=>{
   if(!user){
@@ -465,101 +184,52 @@ auth.onAuthStateChanged(user=>{
 
   db.collection("users").doc(user.uid).get().then(doc=>{
     currentUser = doc.data();
-
-    // Profil
     navUser.innerText = currentUser.name+" ("+currentUser.rank+")";
-    profileBox.innerHTML = `
-      <b>Name:</b> ${currentUser.name}<br>
-      <b>Rang:</b> ${currentUser.rank}<br>
-      <b>Mitglied seit:</b> ${currentUser.memberSince}
-    `;
+    profileBox.innerHTML = `<b>${currentUser.name}</b><br>${currentUser.rank}`;
 
-    // ================= SICHTBARKEIT =================
-
-    // Vorstand Dashboard
-    if(
-      currentUser.isAdmin ||
-      ["secretary","treasurer","vice_president","president"].includes(currentUser.rank)
-    ){
+    if(currentUser.isAdmin || ["secretary","treasurer","vice_president","president"].includes(currentUser.rank)){
       boardDashboard.classList.remove("hidden");
       loadDashboard();
     }
 
-    // Hangaround
-    if(currentUser.rank === "hangaround"){
-      hangaroundBox.classList.remove("hidden");
-    }
+    if(currentUser.rank==="hangaround") hangaroundBox.classList.remove("hidden");
+    if(currentUser.rank==="prospect"){ prospectBox.classList.remove("hidden"); loadMyProspectRides(); }
+    if(currentUser.rank==="road_captain") roadCaptainBox.classList.remove("hidden");
 
-    // Prospect
-    if(currentUser.rank === "prospect"){
-      prospectBox.classList.remove("hidden");
-      loadMyProspectRides();
-    }
-
-    // Road Captain
-    if(currentUser.rank === "road_captain"){
-      roadCaptainBox.classList.remove("hidden");
-    }
-
-    // Ausfahrten sichtbar ab Prospect
-    if(
-      ["prospect","member","road_captain","sergeant_at_arms",
-       "secretary","treasurer","vice_president","president"].includes(currentUser.rank)
-    ){
+    if(["prospect","member","road_captain","sergeant_at_arms","secretary","treasurer","vice_president","president"].includes(currentUser.rank)){
       rideView.classList.remove("hidden");
       loadRides();
     }
 
-    // Bestätigungen (Secretary / SAA / Admin)
-    if(
-      currentUser.isAdmin ||
-      ["secretary","sergeant_at_arms"].includes(currentUser.rank)
-    ){
+    if(currentUser.isAdmin || ["secretary","sergeant_at_arms"].includes(currentUser.rank)){
       confirmBox.classList.remove("hidden");
       loadConfirmations();
     }
 
-    // Secretary
-    if(currentUser.rank === "secretary"){
-      secretaryBox.classList.remove("hidden");
-    }
+    if(currentUser.rank==="secretary") secretaryBox.classList.remove("hidden");
 
-    // Treasurer
-    if(
-      currentUser.isAdmin ||
-      ["treasurer","vice_president","president","sergeant_at_arms","member"].includes(currentUser.rank)
-    ){
+    if(currentUser.isAdmin || ["member","sergeant_at_arms","treasurer","vice_president","president"].includes(currentUser.rank)){
       treasurerBox.classList.remove("hidden");
       loadCash();
     }
 
-    // Buchungsrecht
-    if(currentUser.isAdmin || currentUser.rank === "treasurer"){
+    if(currentUser.isAdmin || currentUser.rank==="treasurer"){
       cashForm.classList.remove("hidden");
     }
 
-    // Historie nur Vorstand + Admin
-    if(
-      currentUser.isAdmin ||
-      ["treasurer","vice_president","president"].includes(currentUser.rank)
-    ){
+    if(currentUser.isAdmin || ["treasurer","vice_president","president"].includes(currentUser.rank)){
       cashHistoryBox.classList.remove("hidden");
     }
 
-    // Abstimmungen
-    if(
-      currentUser.isAdmin ||
-      ["member","secretary","treasurer","sergeant_at_arms","vice_president","president"].includes(currentUser.rank)
-    ){
+    if(currentUser.isAdmin || ["member","secretary","treasurer","sergeant_at_arms","vice_president","president"].includes(currentUser.rank)){
       voteBox.classList.remove("hidden");
       loadVotes();
     }
 
-    if(currentUser.isAdmin || currentUser.rank === "secretary"){
+    if(currentUser.isAdmin || currentUser.rank==="secretary"){
       voteCreateBox.classList.remove("hidden");
     }
 
-    // Admin
     if(currentUser.isAdmin){
       adminBox.classList.remove("hidden");
       loadAdminUsers();
@@ -567,61 +237,171 @@ auth.onAuthStateChanged(user=>{
   });
 });
 
-// ================= ADMIN USER VERWALTUNG =================
-function loadAdminUsers(){
-  adminUserList.innerHTML = "";
-  db.collection("users").onSnapshot(snap=>{
-    adminUserList.innerHTML = "";
-    snap.forEach(doc=>{
-      const u = doc.data();
-      adminUserList.innerHTML += `
-        <div class="card">
-          <b>${u.name}</b><br>
-          Rang:
-          <select onchange="updateUserRank('${doc.id}', this.value)">
-            <option value="${u.rank}">${u.rank}</option>
-            <option value="hangaround">hangaround</option>
-            <option value="prospect">prospect</option>
-            <option value="member">member</option>
-            <option value="road_captain">road_captain</option>
-            <option value="sergeant_at_arms">sergeant_at_arms</option>
-            <option value="secretary">secretary</option>
-            <option value="treasurer">treasurer</option>
-            <option value="vice_president">vice_president</option>
-            <option value="president">president</option>
-          </select>
-        </div>
-      `;
+// ================= FUNCTIONS =================
+function saveNotes(type){
+  const text = type==="hang"?hangNotes.value:prospectNotes.value;
+  db.collection("notes").doc(auth.currentUser.uid).set({text},{merge:true});
+}
+
+function addProspectRide(){
+  db.collection("prospect_rides").add({
+    userId: auth.currentUser.uid,
+    name: currentUser.name,
+    date: pRideDate.value,
+    text: pRideText.value,
+    status:"offen",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+function loadMyProspectRides(){
+  prospectRideList.innerHTML="";
+  db.collection("prospect_rides").where("userId","==",auth.currentUser.uid)
+  .onSnapshot(s=>{
+    prospectRideList.innerHTML="";
+    s.forEach(d=>{
+      const r=d.data();
+      prospectRideList.innerHTML+=`<div class="card">${r.date} – ${r.text} (${r.status})</div>`;
     });
   });
 }
 
-function updateUserRank(uid, rank){
-  db.collection("users").doc(uid).update({ rank });
+function addRide(){
+  db.collection("rides").add({
+    title:rideTitle.value,
+    time:rideTime.value,
+    plan:ridePlan.value,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
 }
 
-// ================= MONATSBERICHT =================
-function generateMonthlyReport(){
-  const now = new Date();
-  const month = now.getMonth();
-  const year = now.getFullYear();
-  let sum = 0;
+function loadRides(){
+  rideList.innerHTML="";
+  db.collection("rides").orderBy("createdAt","desc").onSnapshot(s=>{
+    rideList.innerHTML="";
+    s.forEach(d=>{
+      const r=d.data();
+      rideList.innerHTML+=`<div class="card">${r.title} – ${r.time}</div>`;
+    });
+  });
+}
 
-  db.collection("cash").get().then(snap=>{
-    snap.forEach(doc=>{
-      const c = doc.data();
+function loadConfirmations(){
+  confirmList.innerHTML="";
+  db.collection("prospect_rides").where("status","==","offen").onSnapshot(s=>{
+    confirmList.innerHTML="";
+    s.forEach(d=>{
+      const r=d.data();
+      confirmList.innerHTML+=`
+        <div class="card">
+          ${r.name} – ${r.date}<br>${r.text}<br>
+          <button class="ok" onclick="d.ref.update({status:'bestätigt'})">Bestätigen</button>
+          <button class="warn" onclick="d.ref.update({status:'abgelehnt'})">Ablehnen</button>
+        </div>`;
+    });
+  });
+}
+
+function saveSecretary(){
+  db.collection("secretary_docs").add({text:secText.value,by:currentUser.name});
+}
+
+function addCash(){
+  db.collection("cash").add({
+    amount:Number(cashAmount.value),
+    type:cashType.value,
+    desc:cashDesc.value,
+    by:currentUser.name,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+function loadCash(){
+  let sum=0;
+  cashHistory.innerHTML="";
+  db.collection("cash").orderBy("createdAt","desc").onSnapshot(s=>{
+    sum=0;
+    cashHistory.innerHTML="";
+    s.forEach(d=>{
+      const c=d.data();
+      sum+=c.amount;
+      cashHistory.innerHTML+=`<tr><td>${c.type}</td><td>${c.amount}</td><td>${c.desc}</td><td>${c.by}</td></tr>`;
+    });
+    cashTotal.innerText=sum.toFixed(2);
+  });
+}
+
+function createVote(){
+  db.collection("votes").add({title:voteTitle.value,open:true});
+  voteTitle.value="";
+}
+
+function vote(id,choice){
+  db.collection("votes").doc(id).collection("results").doc(auth.currentUser.uid).set({choice});
+}
+
+function loadVotes(){
+  voteList.innerHTML="";
+  db.collection("votes").onSnapshot(s=>{
+    voteList.innerHTML="";
+    s.forEach(d=>{
+      const v=d.data();
+      voteList.innerHTML+=`<div class="card">${v.title}</div>`;
+    });
+  });
+}
+
+function loadDashboard(){
+  db.collection("cash").onSnapshot(s=>{
+    let t=0; s.forEach(d=>t+=d.data().amount);
+    dashCash.innerText=t.toFixed(2);
+  });
+  db.collection("prospect_rides").where("status","==","offen")
+    .onSnapshot(s=>dashProspects.innerText=s.size);
+  db.collection("votes").where("open","==",true)
+    .onSnapshot(s=>dashVotes.innerText=s.size);
+  db.collection("rides").orderBy("createdAt","desc").limit(1)
+    .onSnapshot(s=>{
+      if(s.docs[0]) dashRide.innerText=s.docs[0].data().title;
+    });
+}
+
+function loadAdminUsers(){
+  adminUserList.innerHTML="";
+  db.collection("users").onSnapshot(s=>{
+    adminUserList.innerHTML="";
+    s.forEach(d=>{
+      const u=d.data();
+      adminUserList.innerHTML+=`
+        <div class="card">
+          ${u.name}
+          <select onchange="d.ref.update({rank:this.value})">
+            <option>${u.rank}</option>
+            <option>hangaround</option><option>prospect</option><option>member</option>
+            <option>road_captain</option><option>sergeant_at_arms</option>
+            <option>secretary</option><option>treasurer</option>
+            <option>vice_president</option><option>president</option>
+          </select>
+        </div>`;
+    });
+  });
+}
+
+function generateMonthlyReport(){
+  const m=new Date().getMonth(), y=new Date().getFullYear();
+  let sum=0;
+  db.collection("cash").get().then(s=>{
+    s.forEach(d=>{
+      const c=d.data();
       if(c.createdAt){
-        const d = c.createdAt.toDate();
-        if(d.getMonth()===month && d.getFullYear()===year){
-          sum += c.amount;
-        }
+        const dt=c.createdAt.toDate();
+        if(dt.getMonth()===m && dt.getFullYear()===y) sum+=c.amount;
       }
     });
-    alert(`Monatsbericht ${month+1}/${year}: ${sum.toFixed(2)} €`);
+    alert(`Monat ${m+1}/${y}: ${sum.toFixed(2)} €`);
   });
 }
 </script>
 
 </body>
 </html>
-
