@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Club Interner Bereich</title>
+
+<style>
+/* ===== GRUNDSTIL ===== */
+body {
+  margin: 0;
+  background: #111;
+  color: #eee;
+  font-family: Arial, sans-serif;
+}
+
+nav {
+  background: #000;
+  padding: 12px;
+  display: flex;
+  gap: 15px;
+}
+
+nav a, nav button {
+  color: #fff;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.hidden {
+  display: none;
+}
+
+.center {
+  text-align: center;
+  margin-top: 150px;
+}
+
+.box {
+  background: #1e1e1e;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+}
+
+#profile {
+  background: #1b1b1b;
+  padding: 15px;
+  margin: 20px;
+  border-radius: 8px;
+}
+
+.content {
+  padding: 20px;
+}
+
+.hint {
+  font-size: 13px;
+  color: #aaa;
+  margin-top: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== LOGIN SEITE ===== -->
+<div id="loginPage" class="center">
+  <h1>Interner Clubbereich</h1>
+  <p>Zugang nur für registrierte Mitglieder</p>
+  <button onclick="login()">Login</button>
+  <p class="hint">Accounts werden ausschließlich vom Administrator erstellt.</p>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="dashboard" class="hidden">
+
+  <nav>
+    <a href="#" onclick="showDashboard()">Dashboard</a>
+    <a href="#" onclick="showRankInfo()">Rang-Info</a>
+    <button onclick="logout()">Logout</button>
+  </nav>
+
+  <div id="profile"></div>
+
+  <div class="content" id="dashboardContent">
+    <div class="box">
+      <h3>📝 Notizen</h3>
+      <p>Eigene Notizen (je nach Rang erweitert).</p>
+    </div>
+
+    <div class="box">
+      <h3>🏍️ Ausfahrten</h3>
+      <p>Ausfahrten dokumentieren und einsehen.</p>
+    </div>
+
+    <div class="box">
+      <h3>💰 Clubkasse</h3>
+      <p><strong>Kassenstand:</strong> 0 €</p>
+      <small>Alle ab Member sehen nur den Betrag.</small>
+    </div>
+  </div>
+
+  <!-- ===== RANG INFO ===== -->
+  <div class="content hidden" id="rankInfo">
+
+    <h1>ℹ️ Rang-Info – Hierarchie & Aufgaben</h1>
+
+    <h2>Hierarchische Ränge (Vorstand)</h2>
+
+    <h3>President (Präsident)</h3>
+    <p>Chef eines Charters oder des gesamten Clubs. Trifft die finalen Entscheidungen.</p>
+
+    <h3>Vice President (Vizepräsident)</h3>
+    <p>Stellvertreter des Präsidenten. Übernimmt die Leitung bei Abwesenheit.</p>
+
+    <h3>Treasurer (Schatzmeister)</h3>
+    <p>Verwaltet die Clubkasse, Beiträge, Einnahmen und Ausgaben.</p>
+
+    <h3>Secretary (Sekretär)</h3>
+    <p>Verantwortlich für Protokolle, Dokumentation und interne Kommunikation.</p>
+
+    <h3>Sergeant-at-Arms (SAA)</h3>
+    <p>Verantwortlich für Disziplin, Ordnung und Sicherheit.</p>
+
+    <h3>Road Captain</h3>
+    <p>Plant und organisiert Ausfahrten, bestimmt Route und Ordnung.</p>
+
+    <h2>Mitgliederstatus</h2>
+
+    <h3>Full Member</h3>
+    <p>Vollwertiges Mitglied mit allen Rechten und Pflichten.</p>
+
+    <h3>Prospect</h3>
+    <p>Mitglied auf Probe. Muss sich über längere Zeit beweisen.</p>
+
+    <h3>Hangaround</h3>
+    <p>Anwärter, lernt den Club kennen und unterstützt bei einfachen Aufgaben.</p>
+
+    <p class="hint">Diese Übersicht ist für alle Mitglieder sichtbar.</p>
+  </div>
+
+</div>
+
+<script>
+/* ===== DEMO USER (SPÄTER FIREBASE) ===== */
+const currentUser = {
+  name: "Demo User",
+  rank: "Member",
+  memberSince: "01.01.2023"
+};
+
+/* ===== LOGIN / LOGOUT ===== */
+function login() {
+  document.getElementById("loginPage").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+  loadProfile();
+}
+
+function logout() {
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("loginPage").classList.remove("hidden");
+}
+
+/* ===== PROFIL ===== */
+function loadProfile() {
+  document.getElementById("profile").innerHTML = `
+    <strong>Name:</strong> ${currentUser.name}<br>
+    <strong>Rang:</strong> ${currentUser.rank}<br>
+    <strong>Mitglied seit:</strong> ${currentUser.memberSince}
+  `;
+}
+
+/* ===== NAVIGATION ===== */
+function showDashboard() {
+  document.getElementById("dashboardContent").classList.remove("hidden");
+  document.getElementById("rankInfo").classList.add("hidden");
+}
+
+function showRankInfo() {
+  document.getElementById("dashboardContent").classList.add("hidden");
+  document.getElementById("rankInfo").classList.remove("hidden");
+}
+</script>
+
+</body>
+</html>
