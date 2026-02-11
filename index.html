@@ -48,7 +48,7 @@ button {
     margin-top: 6px;
 }
 
-input, textarea, select {
+textarea, input, select {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
@@ -58,10 +58,12 @@ input, textarea, select {
 }
 
 .hidden { display: none; }
-.menu-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+
+.info-item, .help-item {
+    background: #222;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
 }
 </style>
 </head>
@@ -86,54 +88,62 @@ input, textarea, select {
     </div>
 </div>
 
-<!-- STARTSCREEN -->
+<!-- HOME -->
 <div class="container hidden" id="homeScreen">
-    <div class="menu-grid">
-        <button onclick="openScreen('notesScreen')">📝 Notizen</button>
-        <button onclick="openScreen('calcScreen')">🧮 Rechner</button>
+
+    <div class="card">
         <button onclick="openScreen('infoScreen')">📢 Infos</button>
+        <button onclick="openScreen('helpScreen')">🆘 Hilfe / Aufgaben</button>
         <button onclick="logout()">🚪 Logout</button>
     </div>
-</div>
 
-<!-- NOTIZEN -->
-<div class="container hidden" id="notesScreen">
-    <div class="card">
-        <h3>Notizen</h3>
-        <textarea id="noteText" placeholder="Notiz schreiben..."></textarea>
-
-        <select id="noteTarget">
-            <option value="private">Privat speichern</option>
-            <option value="president">An President senden</option>
-            <option value="vice_president">An Vice President senden</option>
-            <option value="sergeant_at_arms">An Sergeant at Arms senden</option>
-        </select>
-
-        <button onclick="saveNote()">Speichern</button>
-        <button onclick="backHome()">Zurück</button>
-
-        <div id="notesList"></div>
-    </div>
-</div>
-
-<!-- RECHNER -->
-<div class="container hidden" id="calcScreen">
-    <div class="card">
-        <h3>Rechner</h3>
-        <input type="text" id="calcDisplay" disabled>
-        <button onclick="calcResult()">= Ergebnis</button>
-        <button onclick="calcClear()">Clear</button>
-        <button onclick="backHome()">Zurück</button>
-    </div>
 </div>
 
 <!-- INFOS -->
 <div class="container hidden" id="infoScreen">
+
     <div class="card">
         <h3>Infos</h3>
-        <p>Infosystem folgt in nächster Phase</p>
+        <div id="infosList"></div>
         <button onclick="backHome()">Zurück</button>
     </div>
+
+    <div class="card hidden" id="createInfoBox">
+        <h3>Info erstellen</h3>
+        <input type="text" id="infoTitle" placeholder="Titel">
+        <textarea id="infoText" placeholder="Text"></textarea>
+        <select id="confirmNeeded">
+            <option value="false">Keine Bestätigung</option>
+            <option value="true">Bestätigung erforderlich</option>
+        </select>
+        <button onclick="createInfo()">Speichern</button>
+    </div>
+
+</div>
+
+<!-- HELP -->
+<div class="container hidden" id="helpScreen">
+
+    <div class="card">
+        <h3>Hilfe / Aufgabe erstellen</h3>
+        <textarea id="helpText" placeholder="Was wird benötigt?"></textarea>
+
+        <select id="helpTarget">
+            <option value="all">An Alle senden</option>
+            <option value="single">An Einzelnen User</option>
+        </select>
+
+        <input type="text" id="targetUid" placeholder="User UID (optional)">
+
+        <button onclick="createHelp()">Senden</button>
+    </div>
+
+    <div class="card">
+        <h3>Offene Hilfe</h3>
+        <div id="helpList"></div>
+        <button onclick="backHome()">Zurück</button>
+    </div>
+
 </div>
 
 <script type="module">
@@ -145,7 +155,7 @@ import {
 
 import {
     getFirestore, doc, setDoc, getDoc,
-    addDoc, collection, query, where, getDocs
+    addDoc, collection, getDocs, query, where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -172,7 +182,6 @@ window.register = async () => {
             rPoints: 0
         });
 
-        status("Registriert");
     } catch (e) { status(e.message); }
 };
 
@@ -201,56 +210,86 @@ onAuthStateChanged(auth, async (user) => {
     userName.innerText = userData.name;
     points.innerText = userData.rPoints;
 
-    loadNotes();
+    if (canWriteInfo()) show("createInfoBox");
+
+    loadInfos();
+    loadHelp();
 });
 
+async function loadInfos() {
+    infosList.innerHTML = "";
+    const snaps = await getDocs(collection(db, "infos"));
+
+    snaps.forEach(doc => {
+        const i = doc.data();
+        const div = document.createElement("div");
+        div.className = "info-item";
+        div.innerHTML = `<b>${i.title}</b><br>${i.text}`;
+        infosList.appendChild(div);
+    });
+}
+
+window.createInfo = async () => {
+    await addDoc(collection(db, "infos"), {
+        title: infoTitle.value,
+        text: infoText.value,
+        requireConfirmation: confirmNeeded.value === "true",
+        createdBy: auth.currentUser.uid,
+        timestamp: new Date()
+    });
+
+    loadInfos();
+};
+
+async function loadHelp() {
+    helpList.innerHTML = "";
+    const snaps = await getDocs(collection(db, "help_requests"));
+
+    snaps.forEach(doc => {
+        const h = doc.data();
+
+        if (h.target !== "all" && h.target !== auth.currentUser.uid)
+            return;
+
+        const div = document.createElement("div");
+        div.className = "help-item";
+        div.innerText = h.text;
+        helpList.appendChild(div);
+    });
+}
+
+window.createHelp = async () => {
+
+    const target = helpTarget.value === "all"
+        ? "all"
+        : targetUid.value;
+
+    await addDoc(collection(db, "help_requests"), {
+        text: helpText.value,
+        createdBy: auth.currentUser.uid,
+        target,
+        timestamp: new Date()
+    });
+
+    helpText.value = "";
+    loadHelp();
+};
+
+function canWriteInfo() {
+    return ["president","vice_president","sergeant_at_arms","secretary"]
+        .includes(userData.rank);
+}
+
 window.openScreen = (id) => {
-    hideAllScreens();
+    hide("homeScreen");
     show(id);
 };
 
 window.backHome = () => {
-    hideAllScreens();
+    hide("infoScreen");
+    hide("helpScreen");
     show("homeScreen");
 };
-
-function hideAllScreens() {
-    ["homeScreen","notesScreen","calcScreen","infoScreen"]
-    .forEach(hide);
-}
-
-async function loadNotes() {
-    notesList.innerHTML = "";
-
-    const q = query(collection(db, "notes"), where("uid", "==", auth.currentUser.uid));
-    const snaps = await getDocs(q);
-
-    snaps.forEach(doc => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerText = doc.data().text;
-        notesList.appendChild(div);
-    });
-}
-
-window.saveNote = async () => {
-    await addDoc(collection(db, "notes"), {
-        uid: auth.currentUser.uid,
-        text: noteText.value,
-        timestamp: new Date()
-    });
-
-    noteText.value = "";
-    loadNotes();
-};
-
-/* Rechner */
-window.calcResult = () => {
-    try { calcDisplay.value = eval(calcDisplay.value); }
-    catch { calcDisplay.value = "Error"; }
-};
-
-window.calcClear = () => calcDisplay.value = "";
 
 function status(msg) { document.getElementById("status").innerText = msg; }
 function hide(id){ document.getElementById(id).classList.add("hidden"); }
