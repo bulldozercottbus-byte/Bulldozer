@@ -19,15 +19,15 @@ header {
     width: 100%;
     background: black;
     padding: 12px;
-    display: flex;
-    justify-content: space-between;
     border-bottom: 1px solid #222;
+    text-align: center;
+    font-weight: bold;
 }
 
-.rank { color: orange; font-weight: bold; }
+.rank { color: orange; }
 
 .container {
-    padding: 70px 15px 30px;
+    padding: 80px 15px 30px;
     max-width: 500px;
     margin: auto;
 }
@@ -41,7 +41,7 @@ header {
 
 button {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     border: none;
     background: orange;
     font-weight: bold;
@@ -51,52 +51,55 @@ button {
 input, textarea, select {
     width: 100%;
     padding: 10px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     background: #222;
     border: 1px solid #333;
     color: white;
 }
 
-.note {
-    background: #222;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 8px;
-}
-
-.calc-grid {
+.hidden { display: none; }
+.menu-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 5px;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 </style>
 </head>
 <body>
 
 <header id="header" class="hidden">
-    <div>
-        <div class="rank" id="rankLabel"></div>
-        <div id="userName"></div>
-        <div>R.Punkte: <span id="points"></span></div>
-    </div>
+    <span class="rank" id="rankLabel"></span> |
+    <span id="userName"></span> |
+    R.Punkte: <span id="points"></span>
 </header>
 
+<!-- LOGIN -->
 <div class="container" id="authBox">
-    <h2>Login / Registrierung</h2>
-    <input type="text" id="name" placeholder="Name">
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Passwort">
-    <button onclick="register()">Registrieren</button>
-    <button onclick="login()">Login</button>
-    <p id="status"></p>
+    <div class="card">
+        <h3>Login / Registrierung</h3>
+        <input type="text" id="name" placeholder="Name">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Passwort">
+        <button onclick="register()">Registrieren</button>
+        <button onclick="login()">Login</button>
+        <p id="status"></p>
+    </div>
 </div>
 
-<div class="container hidden" id="appBox">
+<!-- STARTSCREEN -->
+<div class="container hidden" id="homeScreen">
+    <div class="menu-grid">
+        <button onclick="openScreen('notesScreen')">📝 Notizen</button>
+        <button onclick="openScreen('calcScreen')">🧮 Rechner</button>
+        <button onclick="openScreen('infoScreen')">📢 Infos</button>
+        <button onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
 
-    <!-- NOTIZEN -->
+<!-- NOTIZEN -->
+<div class="container hidden" id="notesScreen">
     <div class="card">
         <h3>Notizen</h3>
-
         <textarea id="noteText" placeholder="Notiz schreiben..."></textarea>
 
         <select id="noteTarget">
@@ -107,48 +110,38 @@ input, textarea, select {
         </select>
 
         <button onclick="saveNote()">Speichern</button>
+        <button onclick="backHome()">Zurück</button>
 
-        <h4>Meine Notizen</h4>
         <div id="notesList"></div>
     </div>
+</div>
 
-    <!-- RECHNER -->
+<!-- RECHNER -->
+<div class="container hidden" id="calcScreen">
     <div class="card">
         <h3>Rechner</h3>
-
         <input type="text" id="calcDisplay" disabled>
-
-        <div class="calc-grid">
-            <button onclick="calc('7')">7</button>
-            <button onclick="calc('8')">8</button>
-            <button onclick="calc('9')">9</button>
-            <button onclick="calc('/')">÷</button>
-
-            <button onclick="calc('4')">4</button>
-            <button onclick="calc('5')">5</button>
-            <button onclick="calc('6')">6</button>
-            <button onclick="calc('*')">×</button>
-
-            <button onclick="calc('1')">1</button>
-            <button onclick="calc('2')">2</button>
-            <button onclick="calc('3')">3</button>
-            <button onclick="calc('-')">−</button>
-
-            <button onclick="calc('0')">0</button>
-            <button onclick="calc('.')">.</button>
-            <button onclick="calcResult()">=</button>
-            <button onclick="calc('+')">+</button>
-        </div>
-
+        <button onclick="calcResult()">= Ergebnis</button>
         <button onclick="calcClear()">Clear</button>
+        <button onclick="backHome()">Zurück</button>
     </div>
+</div>
 
+<!-- INFOS -->
+<div class="container hidden" id="infoScreen">
+    <div class="card">
+        <h3>Infos</h3>
+        <p>Infosystem folgt in nächster Phase</p>
+        <button onclick="backHome()">Zurück</button>
+    </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+    getAuth, createUserWithEmailAndPassword,
+    signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import {
     getFirestore, doc, setDoc, getDoc,
@@ -171,9 +164,11 @@ window.register = async () => {
     try {
         const cred = await createUserWithEmailAndPassword(auth, email.value, password.value);
 
+        const isAdmin = email.value === "Admin@Admin";
+
         await setDoc(doc(db, "users", cred.user.uid), {
-            name: name.value,
-            rank: "hangaround",
+            name: name.value || "Admin",
+            rank: isAdmin ? "president" : "hangaround",
             rPoints: 0
         });
 
@@ -186,12 +181,18 @@ window.login = async () => {
     catch (e) { status(e.message); }
 };
 
+window.logout = async () => {
+    await signOut(auth);
+    location.reload();
+};
+
 onAuthStateChanged(auth, async (user) => {
+
     if (!user) return;
 
     hide("authBox");
     show("header");
-    show("appBox");
+    show("homeScreen");
 
     const snap = await getDoc(doc(db, "users", user.uid));
     userData = snap.data();
@@ -203,38 +204,53 @@ onAuthStateChanged(auth, async (user) => {
     loadNotes();
 });
 
+window.openScreen = (id) => {
+    hideAllScreens();
+    show(id);
+};
+
+window.backHome = () => {
+    hideAllScreens();
+    show("homeScreen");
+};
+
+function hideAllScreens() {
+    ["homeScreen","notesScreen","calcScreen","infoScreen"]
+    .forEach(hide);
+}
+
 async function loadNotes() {
     notesList.innerHTML = "";
 
     const q = query(collection(db, "notes"), where("uid", "==", auth.currentUser.uid));
-    const querySnap = await getDocs(q);
+    const snaps = await getDocs(q);
 
-    querySnap.forEach(doc => {
-        const n = doc.data();
-
+    snaps.forEach(doc => {
         const div = document.createElement("div");
-        div.className = "note";
-        div.innerText = n.text;
-
+        div.className = "card";
+        div.innerText = doc.data().text;
         notesList.appendChild(div);
     });
 }
 
 window.saveNote = async () => {
-
-    const target = noteTarget.value;
-
     await addDoc(collection(db, "notes"), {
         uid: auth.currentUser.uid,
         text: noteText.value,
-        private: target === "private",
-        sentTo: target === "private" ? null : target,
         timestamp: new Date()
     });
 
     noteText.value = "";
     loadNotes();
 };
+
+/* Rechner */
+window.calcResult = () => {
+    try { calcDisplay.value = eval(calcDisplay.value); }
+    catch { calcDisplay.value = "Error"; }
+};
+
+window.calcClear = () => calcDisplay.value = "";
 
 function status(msg) { document.getElementById("status").innerText = msg; }
 function hide(id){ document.getElementById(id).classList.add("hidden"); }
@@ -244,13 +260,9 @@ const name = document.getElementById("name");
 const email = document.getElementById("email");
 const password = document.getElementById("password");
 
-/* RECHNER */
-window.calc = (val) => calcDisplay.value += val;
-window.calcClear = () => calcDisplay.value = "";
-window.calcResult = () => {
-    try { calcDisplay.value = eval(calcDisplay.value); }
-    catch { calcDisplay.value = "Error"; }
-};
+const rankLabel = document.getElementById("rankLabel");
+const userName = document.getElementById("userName");
+const points = document.getElementById("points");
 </script>
 
 </body>
