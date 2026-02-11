@@ -46,6 +46,7 @@ button {
     background: orange;
     font-weight: bold;
     margin-top: 6px;
+    cursor: pointer;
 }
 
 textarea, input, select {
@@ -59,10 +60,11 @@ textarea, input, select {
 
 .hidden { display: none; }
 
-.menu-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+.badge {
+    background: red;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 12px;
 }
 </style>
 </head>
@@ -77,91 +79,25 @@ textarea, input, select {
 <!-- LOGIN -->
 <div class="container" id="authBox">
     <div class="card">
-        <h3>Login / Registrierung</h3>
-        <input type="text" id="name" placeholder="Name">
+        <h3>Login</h3>
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Passwort">
-        <button onclick="register()">Registrieren</button>
-        <button onclick="login()">Login</button>
+        <button id="loginBtn">Login</button>
         <p id="status"></p>
     </div>
 </div>
 
 <!-- HOME -->
 <div class="container hidden" id="homeScreen">
-    <div class="menu-grid">
-        <button onclick="openScreen('rankScreen')">🎖 Ränge</button>
-        <button onclick="openScreen('notesScreen')">📝 Notizen</button>
-        <button onclick="openScreen('calcScreen')">🧮 Rechner</button>
-        <button onclick="openScreen('infoScreen')">📢 Infos</button>
-        <button onclick="openScreen('helpScreen')">🆘 Hilfe</button>
-
-        <button id="officerBtn" class="hidden" onclick="openScreen('officerScreen')">
-            🛡 Officer Panel
-        </button>
-
-        <button onclick="logout()">🚪 Logout</button>
-    </div>
-</div>
-
-<!-- OFFICER PANEL -->
-<div class="container hidden" id="officerScreen">
 
     <div class="card">
-        <h3>Info erstellen</h3>
-        <input type="text" id="infoTitle" placeholder="Titel">
-        <textarea id="infoText" placeholder="Text"></textarea>
-        <button onclick="createInfo()">Speichern</button>
+        <button id="infoBtn">📢 Infos <span id="infoBadge" class="badge">0</span></button>
+        <button onclick="openScreen('ridesScreen')">🏍 Ausfahrten</button>
+        <button onclick="openScreen('rankInfoScreen')">🎖 Rang Beschreibung</button>
+        <button onclick="openScreen('historyScreen')">🏛 Historie</button>
+        <button id="logoutBtn">🚪 Logout</button>
     </div>
 
-    <div class="card">
-        <h3>Rang-Anträge</h3>
-        <div id="rankRequests"></div>
-    </div>
-
-    <div class="card">
-        <h3>Punkte vergeben</h3>
-        <input type="text" id="pointsUid" placeholder="User UID">
-        <input type="number" id="pointsAmount" placeholder="Punkte">
-        <button onclick="assignPoints()">Vergeben</button>
-    </div>
-
-    <button onclick="backHome()">Zurück</button>
-</div>
-
-<!-- RÄNGE -->
-<div class="container hidden" id="rankScreen">
-    <div class="card">
-        <h3>Rang beantragen</h3>
-        <select id="rankSelect">
-            <option value="prospect">Prospect</option>
-            <option value="member">Member</option>
-        </select>
-        <button onclick="requestRank()">Beantragen</button>
-        <button onclick="backHome()">Zurück</button>
-    </div>
-</div>
-
-<!-- NOTIZEN -->
-<div class="container hidden" id="notesScreen">
-    <div class="card">
-        <h3>Notizen</h3>
-        <textarea id="noteText"></textarea>
-        <button onclick="saveNote()">Speichern</button>
-        <button onclick="backHome()">Zurück</button>
-        <div id="notesList"></div>
-    </div>
-</div>
-
-<!-- RECHNER -->
-<div class="container hidden" id="calcScreen">
-    <div class="card">
-        <h3>Rechner</h3>
-        <input type="text" id="calcDisplay">
-        <button onclick="calcResult()">= Ergebnis</button>
-        <button onclick="calcClear()">Clear</button>
-        <button onclick="backHome()">Zurück</button>
-    </div>
 </div>
 
 <!-- INFOS -->
@@ -173,22 +109,59 @@ textarea, input, select {
     </div>
 </div>
 
-<!-- HELP -->
-<div class="container hidden" id="helpScreen">
+<!-- AUSFAHRTEN -->
+<div class="container hidden" id="ridesScreen">
     <div class="card">
-        <h3>Hilfe</h3>
-        <textarea id="helpText"></textarea>
-        <button onclick="createHelp()">Senden</button>
+        <h3>Ausfahrten</h3>
+        <div id="ridesList"></div>
+
+        <div id="createRideBox" class="hidden">
+            <input type="text" id="rideText" placeholder="Beschreibung">
+            <select id="ridePriority">
+                <option value="1">1 – Locker</option>
+                <option value="2">2 – Wichtig</option>
+                <option value="3">3 – Pflicht</option>
+            </select>
+            <button onclick="createRide()">Speichern</button>
+        </div>
+
+        <button onclick="backHome()">Zurück</button>
+    </div>
+</div>
+
+<!-- RANG INFO -->
+<div class="container hidden" id="rankInfoScreen">
+    <div class="card">
+        <h3>Ränge & Aufgaben</h3>
+        <p><b>Hangaround</b> – Kennenlernen & Support</p>
+        <p><b>Prospect</b> – Probezeit & Einsatz</p>
+        <p><b>Member</b> – Vollmitglied & Stimme</p>
+        <p><b>Road Captain</b> – Ausfahrten & Planung</p>
+        <p><b>Treasurer</b> – Finanzen & Beiträge</p>
+        <p><b>Secretary</b> – Organisation & Infos</p>
+        <p><b>Sergeant at Arms</b> – Disziplin & Sicherheit</p>
+        <p><b>Vice President</b> – Stellvertretung</p>
+        <p><b>President</b> – Führung & Entscheidungen</p>
+
+        <button onclick="backHome()">Zurück</button>
+    </div>
+</div>
+
+<!-- HISTORIE -->
+<div class="container hidden" id="historyScreen">
+    <div class="card">
+        <h3>Historie</h3>
+        <p>Hier entsteht später die komplette Bulldozer Historie.</p>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs, updateDoc, increment }
+import { getFirestore, doc, getDoc, collection, getDocs, addDoc }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -203,13 +176,30 @@ const db = getFirestore(app);
 
 let userData = null;
 
+/* BUTTON FIXES */
+loginBtn.onclick = async () => {
+    try {
+        await signInWithEmailAndPassword(auth, email.value, password.value);
+    } catch (e) { status(e.message); }
+};
+
+logoutBtn.onclick = async () => {
+    await signOut(auth);
+    location.reload();
+};
+
+infoBtn.onclick = () => {
+    openScreen("infoScreen");
+    infoBadge.innerText = "0";
+};
+
 onAuthStateChanged(auth, async (user) => {
 
     if (!user) return;
 
-    hide("authBox");
-    show("header");
-    show("homeScreen");
+    authBox.classList.add("hidden");
+    homeScreen.classList.remove("hidden");
+    header.classList.remove("hidden");
 
     const snap = await getDoc(doc(db, "users", user.uid));
     userData = snap.data();
@@ -218,59 +208,67 @@ onAuthStateChanged(auth, async (user) => {
     userName.innerText = userData.name;
     points.innerText = userData.rPoints;
 
-    if (canAccessOfficer()) show("officerBtn");
+    loadInfos();
+    loadRides();
 
-    loadRankRequests();
+    if (canCreateRide())
+        createRideBox.classList.remove("hidden");
 });
 
-function canAccessOfficer() {
-    return ["secretary","sergeant_at_arms","vice_president","president"]
+async function loadInfos() {
+    const snaps = await getDocs(collection(db, "infos"));
+    infoBadge.innerText = snaps.size;
+}
+
+async function loadRides() {
+    ridesList.innerHTML = "";
+    const snaps = await getDocs(collection(db, "rides"));
+
+    snaps.forEach(doc => {
+        const r = doc.data();
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerText = `[Prio ${r.priority}] ${r.text}`;
+        ridesList.appendChild(div);
+    });
+}
+
+window.createRide = async () => {
+    await addDoc(collection(db, "rides"), {
+        text: rideText.value,
+        priority: ridePriority.value
+    });
+
+    rideText.value = "";
+    loadRides();
+};
+
+function canCreateRide() {
+    return ["road_captain","sergeant_at_arms","vice_president","president"]
         .includes(userData.rank);
 }
 
-window.createInfo = async () => {
-    if (!canAccessOfficer()) return;
-
-    await addDoc(collection(db, "infos"), {
-        title: infoTitle.value,
-        text: infoText.value
-    });
-
-    status("Info gespeichert");
+window.openScreen = (id) => {
+    document.querySelectorAll(".container").forEach(el => el.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
 };
 
-window.assignPoints = async () => {
-    if (!["sergeant_at_arms","vice_president","president"]
-        .includes(userData.rank)) return;
+window.backHome = () => openScreen("homeScreen");
 
-    await updateDoc(doc(db, "users", pointsUid.value), {
-        rPoints: increment(Number(pointsAmount.value))
-    });
+function status(msg) { document.getElementById("status").innerText = msg; }
 
-    status("Punkte vergeben");
-};
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const infoBtn = document.getElementById("infoBtn");
+const infoBadge = document.getElementById("infoBadge");
+const createRideBox = document.getElementById("createRideBox");
 
-async function loadRankRequests() {
-    const snaps = await getDocs(collection(db, "rank_requests"));
-    rankRequests.innerHTML = snaps.size + " Anträge gefunden";
-}
+const authBox = document.getElementById("authBox");
+const homeScreen = document.getElementById("homeScreen");
+const header = document.getElementById("header");
 
-/* Navigation */
-window.openScreen = (id) => { hideAll(); show(id); };
-window.backHome = () => { hideAll(); show("homeScreen"); };
-
-function hideAll() {
-    ["homeScreen","officerScreen","rankScreen","notesScreen","calcScreen","infoScreen","helpScreen"]
-    .forEach(hide);
-}
-
-function status(msg){ document.getElementById("status").innerText = msg; }
-function hide(id){ document.getElementById(id).classList.add("hidden"); }
-function show(id){ document.getElementById(id).classList.remove("hidden"); }
-
-const rankLabel = document.getElementById("rankLabel");
-const userName = document.getElementById("userName");
-const points = document.getElementById("points");
+const email = document.getElementById("email");
+const password = document.getElementById("password");
 </script>
 
 </body>
