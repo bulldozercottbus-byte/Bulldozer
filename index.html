@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Chapter App</title>
 
 <style>
@@ -14,7 +13,6 @@ body {
     color: white;
 }
 
-/* HEADER */
 header {
     position: fixed;
     top: 0;
@@ -30,13 +28,12 @@ header {
 
 .rank { color: orange; font-weight: bold; }
 
-.info-button {
+.menu-btn {
     font-size: 22px;
     color: orange;
     cursor: pointer;
 }
 
-/* CONTENT */
 .container {
     padding: 70px 15px 20px;
     max-width: 500px;
@@ -59,7 +56,7 @@ button {
     margin-top: 5px;
 }
 
-input, select {
+input, textarea, select {
     width: 100%;
     padding: 10px;
     margin-bottom: 8px;
@@ -70,10 +67,11 @@ input, select {
 
 .hidden { display: none; }
 
-.rank-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+.info-item {
+    background: #222;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
 }
 </style>
 </head>
@@ -81,69 +79,66 @@ input, select {
 
 <header id="header" class="hidden">
     <div>
-        <div class="rank" id="rankLabel">Hangaround</div>
-        <div id="userName">Name</div>
-        <div>R.Punkte: <span id="points">0</span></div>
+        <div class="rank" id="rankLabel"></div>
+        <div id="userName"></div>
+        <div>R.Punkte: <span id="points"></span></div>
     </div>
-
-    <div class="info-button" onclick="toggleMenu()">☰</div>
+    <div class="menu-btn" onclick="toggleOfficerPanel()">☰</div>
 </header>
 
 <div class="container" id="authBox">
     <h2>Login / Registrierung</h2>
-
     <input type="text" id="name" placeholder="Name">
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Passwort">
-
     <button onclick="register()">Registrieren</button>
     <button onclick="login()">Login</button>
-
     <p id="status"></p>
 </div>
 
 <div class="container hidden" id="appBox">
 
-    <!-- RangNGE -->
+    <!-- INFO BOX -->
     <div class="card">
-        <h3>Rang beantragen</h3>
-
-        <div class="rank-grid">
-            <button onclick="requestRank('prospect')">Prospect</button>
-            <button onclick="requestRank('member')">Member</button>
-            <button onclick="requestRank('road_captain')">Road Captain</button>
-            <button onclick="requestRank('treasurer')">Treasurer</button>
-            <button onclick="requestRank('secretary')">Secretary</button>
-        </div>
+        <h3>Infos</h3>
+        <div id="infosList"></div>
     </div>
 
-    <!-- ABMELDUNG -->
+</div>
+
+<!-- OFFICER PANEL -->
+<div class="container hidden" id="officerPanel">
+
     <div class="card">
-        <h3>Abmeldung</h3>
-
-        <input type="text" id="destination" placeholder="Wohin?">
-        <input type="date" id="fromDate">
-        <input type="date" id="toDate">
-
-        <select id="informed">
-            <option value="">Wen informiert?</option>
-            <option value="president">President</option>
-            <option value="vice_president">Vice President</option>
-            <option value="sergeant_at_arms">Sergeant at Arms</option>
+        <h3>Info erstellen</h3>
+        <input type="text" id="infoTitle" placeholder="Titel">
+        <textarea id="infoText" placeholder="Text"></textarea>
+        <select id="confirmNeeded">
+            <option value="false">Keine Bestätigung</option>
+            <option value="true">Bestätigung erforderlich</option>
         </select>
+        <button onclick="createInfo()">Speichern</button>
+    </div>
 
-        <button onclick="submitLeave()">Abmeldung speichern</button>
+    <div class="card">
+        <h3>Punkte vergeben</h3>
+        <input type="text" id="targetUid" placeholder="User UID">
+        <input type="number" id="pointsAmount" placeholder="Punkte">
+        <input type="text" id="pointsReason" placeholder="Grund">
+        <button onclick="assignPoints()">Punkte vergeben</button>
     </div>
 
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } 
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import { getFirestore, doc, setDoc, getDoc, addDoc, collection } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+    getFirestore, doc, setDoc, getDoc, addDoc,
+    collection, getDocs, updateDoc, increment
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
@@ -155,57 +150,26 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let currentUserData = null;
+let userData = null;
 
-window.register = async function() {
-    const name = nameInput().value;
+window.register = async () => {
     try {
-        const cred = await createUserWithEmailAndPassword(auth, emailInput().value, passInput().value);
-
+        const cred = await createUserWithEmailAndPassword(auth, email.value, password.value);
         await setDoc(doc(db, "users", cred.user.uid), {
-            name,
+            name: name.value,
             rank: "hangaround",
-            rPoints: 0,
-            approved: false
+            rPoints: 0
         });
-
         status("Registriert");
     } catch (e) { status(e.message); }
-}
+};
 
-window.login = async function() {
-    try {
-        await signInWithEmailAndPassword(auth, emailInput().value, passInput().value);
-    } catch (e) { status(e.message); }
-}
-
-window.requestRank = async function(rank) {
-
-    await addDoc(collection(db, "rank_requests"), {
-        uid: auth.currentUser.uid,
-        requestedRank: rank,
-        timestamp: new Date()
-    });
-
-    status("Rang beantragt");
-}
-
-window.submitLeave = async function() {
-
-    await addDoc(collection(db, "leave_requests"), {
-        uid: auth.currentUser.uid,
-        destination: document.getElementById("destination").value,
-        from: document.getElementById("fromDate").value,
-        to: document.getElementById("toDate").value,
-        informed: document.getElementById("informed").value,
-        timestamp: new Date()
-    });
-
-    status("Abmeldung gespeichert");
-}
+window.login = async () => {
+    try { await signInWithEmailAndPassword(auth, email.value, password.value); }
+    catch (e) { status(e.message); }
+};
 
 onAuthStateChanged(auth, async (user) => {
-
     if (!user) return;
 
     hide("authBox");
@@ -213,36 +177,105 @@ onAuthStateChanged(auth, async (user) => {
     show("appBox");
 
     const snap = await getDoc(doc(db, "users", user.uid));
-    currentUserData = snap.data();
+    userData = snap.data();
 
-    userName().innerText = currentUserData.name;
-    points().innerText = currentUserData.rPoints;
-    rankLabel().innerText = formatRank(currentUserData.rank);
+    rankLabel.innerText = userData.rank;
+    userName.innerText = userData.name;
+    points.innerText = userData.rPoints;
+
+    loadInfos();
 });
 
-function formatRank(rank) {
-    return rank.replaceAll("_", " ");
+async function loadInfos() {
+    infosList.innerHTML = "";
+    const query = await getDocs(collection(db, "infos"));
+
+    query.forEach(docSnap => {
+        const data = docSnap.data();
+
+        const div = document.createElement("div");
+        div.className = "info-item";
+        div.innerHTML = `
+            <b>${data.title}</b><br>
+            ${data.text}
+            ${data.requireConfirmation ? `
+                <button onclick="respond('${docSnap.id}','accepted')">✔ Zusagen</button>
+                <button onclick="respond('${docSnap.id}','declined')">✖ Ablehnen</button>
+            ` : ""}
+        `;
+
+        infosList.appendChild(div);
+    });
 }
 
-function toggle(id) {
-    document.getElementById(id).classList.toggle("hidden");
+window.respond = async (infoId, statusValue) => {
+    await setDoc(doc(db, "infos", infoId, "responses", auth.currentUser.uid), {
+        status: statusValue
+    });
+    status("Antwort gespeichert");
+};
+
+window.createInfo = async () => {
+    if (!canWriteInfo()) return status("Keine Rechte");
+
+    await addDoc(collection(db, "infos"), {
+        title: infoTitle.value,
+        text: infoText.value,
+        requireConfirmation: confirmNeeded.value === "true",
+        createdBy: auth.currentUser.uid,
+        timestamp: new Date()
+    });
+
+    loadInfos();
+};
+
+window.assignPoints = async () => {
+    if (!isOfficer()) return status("Keine Rechte");
+
+    const uid = targetUid.value;
+    const amount = Number(pointsAmount.value);
+
+    await addDoc(collection(db, "rpoint_logs"), {
+        uid,
+        amount,
+        reason: pointsReason.value,
+        assignedBy: auth.currentUser.uid
+    });
+
+    await updateDoc(doc(db, "users", uid), {
+        rPoints: increment(amount)
+    });
+
+    status("Punkte vergeben");
+};
+
+function isOfficer() {
+    return ["president", "vice_president", "sergeant_at_arms"].includes(userData.rank);
 }
 
-window.toggleMenu = function() {
-    alert("Info / Menü kommt in Phase 3");
+function canWriteInfo() {
+    return ["president", "vice_president", "sergeant_at_arms", "secretary"].includes(userData.rank);
 }
+
+window.toggleOfficerPanel = () => {
+    if (!isOfficer() && userData.rank !== "secretary")
+        return status("Kein Zugriff");
+
+    officerPanel.classList.toggle("hidden");
+};
 
 function status(msg) { document.getElementById("status").innerText = msg; }
 function hide(id){ document.getElementById(id).classList.add("hidden"); }
 function show(id){ document.getElementById(id).classList.remove("hidden"); }
 
-const nameInput = () => document.getElementById("name");
-const emailInput = () => document.getElementById("email");
-const passInput = () => document.getElementById("password");
+const name = document.getElementById("name");
+const email = document.getElementById("email");
+const password = document.getElementById("password");
 
-const userName = () => document.getElementById("userName");
-const points = () => document.getElementById("points");
-const rankLabel = () => document.getElementById("rankLabel");
+const rankLabel = document.getElementById("rankLabel");
+const userName = document.getElementById("userName");
+const points = document.getElementById("points");
+const infosList = document.getElementById("infosList");
 </script>
 
 </body>
