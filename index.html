@@ -22,6 +22,7 @@ header {
     border-bottom: 1px solid #222;
     text-align: center;
     font-weight: bold;
+    z-index: 10;
 }
 
 .rank { color: orange; }
@@ -49,7 +50,7 @@ button {
     cursor: pointer;
 }
 
-textarea, input, select {
+input, textarea, select {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
@@ -59,6 +60,12 @@ textarea, input, select {
 }
 
 .hidden { display: none; }
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
 
 .badge {
     background: red;
@@ -89,15 +96,20 @@ textarea, input, select {
 
 <!-- HOME -->
 <div class="container hidden" id="homeScreen">
-
-    <div class="card">
+    <div class="menu-grid">
         <button id="infoBtn">📢 Infos <span id="infoBadge" class="badge">0</span></button>
         <button onclick="openScreen('ridesScreen')">🏍 Ausfahrten</button>
+        <button onclick="openScreen('notesScreen')">📝 Notizen</button>
+        <button onclick="openScreen('calcScreen')">🧮 Rechner</button>
         <button onclick="openScreen('rankInfoScreen')">🎖 Rang Beschreibung</button>
         <button onclick="openScreen('historyScreen')">🏛 Historie</button>
+
+        <button id="officerBtn" class="hidden" onclick="openScreen('officerScreen')">
+            🛡 Officer Panel
+        </button>
+
         <button id="logoutBtn">🚪 Logout</button>
     </div>
-
 </div>
 
 <!-- INFOS -->
@@ -109,14 +121,14 @@ textarea, input, select {
     </div>
 </div>
 
-<!-- AUSFAHRTEN -->
+<!-- RIDES -->
 <div class="container hidden" id="ridesScreen">
     <div class="card">
         <h3>Ausfahrten</h3>
         <div id="ridesList"></div>
 
         <div id="createRideBox" class="hidden">
-            <input type="text" id="rideText" placeholder="Beschreibung">
+            <textarea id="rideText" placeholder="Ausfahrt Beschreibung"></textarea>
             <select id="ridePriority">
                 <option value="1">1 – Locker</option>
                 <option value="2">2 – Wichtig</option>
@@ -129,29 +141,61 @@ textarea, input, select {
     </div>
 </div>
 
-<!-- RANG INFO -->
-<div class="container hidden" id="rankInfoScreen">
+<!-- NOTES -->
+<div class="container hidden" id="notesScreen">
     <div class="card">
-        <h3>Ränge & Aufgaben</h3>
-        <p><b>Hangaround</b> – Kennenlernen & Support</p>
-        <p><b>Prospect</b> – Probezeit & Einsatz</p>
-        <p><b>Member</b> – Vollmitglied & Stimme</p>
-        <p><b>Road Captain</b> – Ausfahrten & Planung</p>
-        <p><b>Treasurer</b> – Finanzen & Beiträge</p>
-        <p><b>Secretary</b> – Organisation & Infos</p>
-        <p><b>Sergeant at Arms</b> – Disziplin & Sicherheit</p>
-        <p><b>Vice President</b> – Stellvertretung</p>
-        <p><b>President</b> – Führung & Entscheidungen</p>
+        <h3>Notizen</h3>
+        <textarea id="noteText"></textarea>
+        <button onclick="saveNote()">Speichern</button>
+        <button onclick="backHome()">Zurück</button>
+        <div id="notesList"></div>
+    </div>
+</div>
 
+<!-- CALC -->
+<div class="container hidden" id="calcScreen">
+    <div class="card">
+        <h3>Rechner</h3>
+        <input type="text" id="calcDisplay">
+        <button onclick="calcResult()">= Ergebnis</button>
+        <button onclick="calcClear()">Clear</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 
-<!-- HISTORIE -->
+<!-- RANK INFO -->
+<div class="container hidden" id="rankInfoScreen">
+    <div class="card">
+        <h3>Ränge & Aufgaben</h3>
+        <p><b>Hangaround</b> – Kennenlernen</p>
+        <p><b>Prospect</b> – Probezeit</p>
+        <p><b>Member</b> – Vollmitglied</p>
+        <p><b>Road Captain</b> – Ausfahrten</p>
+        <p><b>Treasurer</b> – Finanzen</p>
+        <p><b>Secretary</b> – Organisation</p>
+        <p><b>Sergeant at Arms</b> – Disziplin</p>
+        <p><b>Vice President</b> – Stellvertretung</p>
+        <p><b>President</b> – Führung</p>
+        <button onclick="backHome()">Zurück</button>
+    </div>
+</div>
+
+<!-- HISTORY -->
 <div class="container hidden" id="historyScreen">
     <div class="card">
         <h3>Historie</h3>
-        <p>Hier entsteht später die komplette Bulldozer Historie.</p>
+        <p>Hier entsteht eure Story.</p>
+        <button onclick="backHome()">Zurück</button>
+    </div>
+</div>
+
+<!-- OFFICER -->
+<div class="container hidden" id="officerScreen">
+    <div class="card">
+        <h3>Officer Panel</h3>
+        <input type="text" id="infoTitle" placeholder="Info Titel">
+        <textarea id="infoText"></textarea>
+        <button onclick="createInfo()">Info speichern</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
@@ -174,32 +218,33 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const officerBtn = document.getElementById("officerBtn");
+const infoBadge = document.getElementById("infoBadge");
+
 let userData = null;
 
-/* BUTTON FIXES */
 loginBtn.onclick = async () => {
     try {
         await signInWithEmailAndPassword(auth, email.value, password.value);
     } catch (e) { status(e.message); }
 };
 
-logoutBtn.onclick = async () => {
-    await signOut(auth);
-    location.reload();
-};
-
-infoBtn.onclick = () => {
-    openScreen("infoScreen");
-    infoBadge.innerText = "0";
-};
+logoutBtn.onclick = async () => await signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
 
-    if (!user) return;
+    if (!user) {
+        show("authBox");
+        hide("homeScreen");
+        hide("header");
+        return;
+    }
 
-    authBox.classList.add("hidden");
-    homeScreen.classList.remove("hidden");
-    header.classList.remove("hidden");
+    hide("authBox");
+    show("homeScreen");
+    show("header");
 
     const snap = await getDoc(doc(db, "users", user.uid));
     userData = snap.data();
@@ -208,11 +253,11 @@ onAuthStateChanged(auth, async (user) => {
     userName.innerText = userData.name;
     points.innerText = userData.rPoints;
 
-    loadInfos();
-    loadRides();
+    if (["secretary","sergeant_at_arms","vice_president","president"]
+        .includes(userData.rank))
+        officerBtn.classList.remove("hidden");
 
-    if (canCreateRide())
-        createRideBox.classList.remove("hidden");
+    loadInfos();
 });
 
 async function loadInfos() {
@@ -220,33 +265,29 @@ async function loadInfos() {
     infoBadge.innerText = snaps.size;
 }
 
-async function loadRides() {
-    ridesList.innerHTML = "";
-    const snaps = await getDocs(collection(db, "rides"));
-
-    snaps.forEach(doc => {
-        const r = doc.data();
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerText = `[Prio ${r.priority}] ${r.text}`;
-        ridesList.appendChild(div);
-    });
-}
-
 window.createRide = async () => {
     await addDoc(collection(db, "rides"), {
         text: rideText.value,
         priority: ridePriority.value
     });
-
-    rideText.value = "";
-    loadRides();
 };
 
-function canCreateRide() {
-    return ["road_captain","sergeant_at_arms","vice_president","president"]
-        .includes(userData.rank);
-}
+window.saveNote = async () => {
+    await addDoc(collection(db, "notes"), {
+        uid: auth.currentUser.uid,
+        text: noteText.value
+    });
+};
+
+window.calcResult = () => calcDisplay.value = eval(calcDisplay.value);
+window.calcClear = () => calcDisplay.value = "";
+
+window.createInfo = async () => {
+    await addDoc(collection(db, "infos"), {
+        title: infoTitle.value,
+        text: infoText.value
+    });
+};
 
 window.openScreen = (id) => {
     document.querySelectorAll(".container").forEach(el => el.classList.add("hidden"));
@@ -255,17 +296,9 @@ window.openScreen = (id) => {
 
 window.backHome = () => openScreen("homeScreen");
 
-function status(msg) { document.getElementById("status").innerText = msg; }
-
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const infoBtn = document.getElementById("infoBtn");
-const infoBadge = document.getElementById("infoBadge");
-const createRideBox = document.getElementById("createRideBox");
-
-const authBox = document.getElementById("authBox");
-const homeScreen = document.getElementById("homeScreen");
-const header = document.getElementById("header");
+function status(msg){ document.getElementById("status").innerText = msg; }
+function show(id){ document.getElementById(id).classList.remove("hidden"); }
+function hide(id){ document.getElementById(id).classList.add("hidden"); }
 
 const email = document.getElementById("email");
 const password = document.getElementById("password");
