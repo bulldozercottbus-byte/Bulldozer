@@ -95,26 +95,49 @@ textarea, input, select {
         <button onclick="openScreen('calcScreen')">🧮 Rechner</button>
         <button onclick="openScreen('infoScreen')">📢 Infos</button>
         <button onclick="openScreen('helpScreen')">🆘 Hilfe</button>
+
+        <button id="officerBtn" class="hidden" onclick="openScreen('officerScreen')">
+            🛡 Officer Panel
+        </button>
+
         <button onclick="logout()">🚪 Logout</button>
     </div>
+</div>
+
+<!-- OFFICER PANEL -->
+<div class="container hidden" id="officerScreen">
+
+    <div class="card">
+        <h3>Info erstellen</h3>
+        <input type="text" id="infoTitle" placeholder="Titel">
+        <textarea id="infoText" placeholder="Text"></textarea>
+        <button onclick="createInfo()">Speichern</button>
+    </div>
+
+    <div class="card">
+        <h3>Rang-Anträge</h3>
+        <div id="rankRequests"></div>
+    </div>
+
+    <div class="card">
+        <h3>Punkte vergeben</h3>
+        <input type="text" id="pointsUid" placeholder="User UID">
+        <input type="number" id="pointsAmount" placeholder="Punkte">
+        <button onclick="assignPoints()">Vergeben</button>
+    </div>
+
+    <button onclick="backHome()">Zurück</button>
 </div>
 
 <!-- RÄNGE -->
 <div class="container hidden" id="rankScreen">
     <div class="card">
         <h3>Rang beantragen</h3>
-
         <select id="rankSelect">
             <option value="prospect">Prospect</option>
             <option value="member">Member</option>
-            <option value="road_captain">Road Captain</option>
-            <option value="treasurer">Treasurer</option>
-            <option value="secretary">Secretary</option>
-            <option value="sergeant_at_arms">Sergeant at Arms</option>
-            <option value="vice_president">Vice President</option>
         </select>
-
-        <button onclick="requestRank()">Rang beantragen</button>
+        <button onclick="requestRank()">Beantragen</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
@@ -153,25 +176,20 @@ textarea, input, select {
 <!-- HELP -->
 <div class="container hidden" id="helpScreen">
     <div class="card">
-        <h3>Hilfe / Aufgabe</h3>
+        <h3>Hilfe</h3>
         <textarea id="helpText"></textarea>
         <button onclick="createHelp()">Senden</button>
         <button onclick="backHome()">Zurück</button>
-        <div id="helpList"></div>
     </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-    getAuth, createUserWithEmailAndPassword,
-    signInWithEmailAndPassword, onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import {
-    getFirestore, doc, setDoc, getDoc,
-    addDoc, collection, getDocs, query, where
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs, updateDoc, increment }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
@@ -185,27 +203,8 @@ const db = getFirestore(app);
 
 let userData = null;
 
-window.register = async () => {
-    const cred = await createUserWithEmailAndPassword(auth, email.value, password.value);
-    const isAdmin = email.value === "Admin@Admin";
-
-    await setDoc(doc(db, "users", cred.user.uid), {
-        name: name.value,
-        rank: isAdmin ? "president" : "hangaround",
-        rPoints: 0
-    });
-};
-
-window.login = async () => {
-    await signInWithEmailAndPassword(auth, email.value, password.value);
-};
-
-window.logout = async () => {
-    await signOut(auth);
-    location.reload();
-};
-
 onAuthStateChanged(auth, async (user) => {
+
     if (!user) return;
 
     hide("authBox");
@@ -219,67 +218,55 @@ onAuthStateChanged(auth, async (user) => {
     userName.innerText = userData.name;
     points.innerText = userData.rPoints;
 
-    loadNotes();
+    if (canAccessOfficer()) show("officerBtn");
+
+    loadRankRequests();
 });
 
-window.requestRank = async () => {
-    await addDoc(collection(db, "rank_requests"), {
-        uid: auth.currentUser.uid,
-        requestedRank: rankSelect.value
-    });
-
-    status("Rang beantragt");
-};
-
-window.saveNote = async () => {
-    await addDoc(collection(db, "notes"), {
-        uid: auth.currentUser.uid,
-        text: noteText.value
-    });
-
-    noteText.value = "";
-    loadNotes();
-};
-
-async function loadNotes() {
-    notesList.innerHTML = "";
-    const q = query(collection(db, "notes"), where("uid", "==", auth.currentUser.uid));
-    const snaps = await getDocs(q);
-
-    snaps.forEach(doc => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerText = doc.data().text;
-        notesList.appendChild(div);
-    });
+function canAccessOfficer() {
+    return ["secretary","sergeant_at_arms","vice_president","president"]
+        .includes(userData.rank);
 }
 
-/* Rechner */
-window.calcResult = () => calcDisplay.value = eval(calcDisplay.value);
-window.calcClear = () => calcDisplay.value = "";
+window.createInfo = async () => {
+    if (!canAccessOfficer()) return;
 
-window.openScreen = (id) => {
-    hideAll();
-    show(id);
+    await addDoc(collection(db, "infos"), {
+        title: infoTitle.value,
+        text: infoText.value
+    });
+
+    status("Info gespeichert");
 };
 
-window.backHome = () => {
-    hideAll();
-    show("homeScreen");
+window.assignPoints = async () => {
+    if (!["sergeant_at_arms","vice_president","president"]
+        .includes(userData.rank)) return;
+
+    await updateDoc(doc(db, "users", pointsUid.value), {
+        rPoints: increment(Number(pointsAmount.value))
+    });
+
+    status("Punkte vergeben");
 };
+
+async function loadRankRequests() {
+    const snaps = await getDocs(collection(db, "rank_requests"));
+    rankRequests.innerHTML = snaps.size + " Anträge gefunden";
+}
+
+/* Navigation */
+window.openScreen = (id) => { hideAll(); show(id); };
+window.backHome = () => { hideAll(); show("homeScreen"); };
 
 function hideAll() {
-    ["homeScreen","rankScreen","notesScreen","calcScreen","infoScreen","helpScreen"]
+    ["homeScreen","officerScreen","rankScreen","notesScreen","calcScreen","infoScreen","helpScreen"]
     .forEach(hide);
 }
 
-function status(msg) { document.getElementById("status").innerText = msg; }
+function status(msg){ document.getElementById("status").innerText = msg; }
 function hide(id){ document.getElementById(id).classList.add("hidden"); }
 function show(id){ document.getElementById(id).classList.remove("hidden"); }
-
-const name = document.getElementById("name");
-const email = document.getElementById("email");
-const password = document.getElementById("password");
 
 const rankLabel = document.getElementById("rankLabel");
 const userName = document.getElementById("userName");
