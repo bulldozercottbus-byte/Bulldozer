@@ -2,80 +2,91 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Chapter App</title>
 
 <style>
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #111;
-        color: white;
-    }
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f0f0f;
+    color: white;
+}
 
-    header {
-        background: black;
-        padding: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #333;
-    }
+/* HEADER */
+header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: black;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #222;
+    z-index: 100;
+}
 
-    .user-info {
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        font-weight: bold;
-    }
+.rank { color: orange; font-weight: bold; }
 
-    .rank {
-        color: orange;
-    }
+.info-button {
+    font-size: 22px;
+    color: orange;
+    cursor: pointer;
+}
 
-    button {
-        background: orange;
-        border: none;
-        padding: 10px;
-        cursor: pointer;
-        font-weight: bold;
-        width: 100%;
-        margin-top: 5px;
-    }
+/* CONTENT */
+.container {
+    padding: 70px 15px 20px;
+    max-width: 500px;
+    margin: auto;
+}
 
-    .container {
-        padding: 30px;
-        max-width: 400px;
-        margin: auto;
-    }
+.card {
+    background: #181818;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
 
-    input {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 10px;
-        background: #222;
-        border: 1px solid #333;
-        color: white;
-    }
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: orange;
+    font-weight: bold;
+    margin-top: 5px;
+}
 
-    .hidden { display: none; }
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #222;
+    border: 1px solid #333;
+    color: white;
+}
 
-    .info-button {
-        font-size: 22px;
-        cursor: pointer;
-        color: orange;
-    }
+.hidden { display: none; }
+
+.rank-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
 </style>
 </head>
 <body>
 
 <header id="header" class="hidden">
-    <div class="user-info">
+    <div>
         <div class="rank" id="rankLabel">Hangaround</div>
         <div id="userName">Name</div>
         <div>R.Punkte: <span id="points">0</span></div>
     </div>
 
-    <div class="info-button">ℹ</div>
+    <div class="info-button" onclick="toggleMenu()">☰</div>
 </header>
 
 <div class="container" id="authBox">
@@ -92,8 +103,38 @@
 </div>
 
 <div class="container hidden" id="appBox">
-    <h2>Willkommen</h2>
-    <p>Phase 1 aktiv – Benutzer & Rangsystem läuft.</p>
+
+    <!-- RangNGE -->
+    <div class="card">
+        <h3>Rang beantragen</h3>
+
+        <div class="rank-grid">
+            <button onclick="requestRank('prospect')">Prospect</button>
+            <button onclick="requestRank('member')">Member</button>
+            <button onclick="requestRank('road_captain')">Road Captain</button>
+            <button onclick="requestRank('treasurer')">Treasurer</button>
+            <button onclick="requestRank('secretary')">Secretary</button>
+        </div>
+    </div>
+
+    <!-- ABMELDUNG -->
+    <div class="card">
+        <h3>Abmeldung</h3>
+
+        <input type="text" id="destination" placeholder="Wohin?">
+        <input type="date" id="fromDate">
+        <input type="date" id="toDate">
+
+        <select id="informed">
+            <option value="">Wen informiert?</option>
+            <option value="president">President</option>
+            <option value="vice_president">Vice President</option>
+            <option value="sergeant_at_arms">Sergeant at Arms</option>
+        </select>
+
+        <button onclick="submitLeave()">Abmeldung speichern</button>
+    </div>
+
 </div>
 
 <script type="module">
@@ -101,104 +142,107 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import { getFirestore, doc, setDoc, getDoc } 
+import { getFirestore, doc, setDoc, getDoc, addDoc, collection } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
   authDomain: "bulldozer-f8a26.firebaseapp.com",
-  projectId: "bulldozer-f8a26",
-  storageBucket: "bulldozer-f8a26.firebasestorage.app",
-  messagingSenderId: "576318762826",
-  appId: "1:576318762826:web:7d812e32e152d64d425bb3",
-  measurementId: "G-X3C80RP00D"
+  projectId: "bulldozer-f8a26"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+let currentUserData = null;
+
 window.register = async function() {
-
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    if (!name) {
-        status("Bitte Namen eingeben");
-        return;
-    }
-
+    const name = nameInput().value;
     try {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        const cred = await createUserWithEmailAndPassword(auth, emailInput().value, passInput().value);
 
         await setDoc(doc(db, "users", cred.user.uid), {
-            name: name,
+            name,
             rank: "hangaround",
             rPoints: 0,
-            approved: false,
-            createdAt: new Date()
+            approved: false
         });
 
-        status("Registrierung erfolgreich");
-    } catch (e) {
-        status(e.message);
-    }
+        status("Registriert");
+    } catch (e) { status(e.message); }
 }
 
 window.login = async function() {
-
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
     try {
-        await signInWithEmailAndPassword(auth, email, password);
-    } catch (e) {
-        status(e.message);
-    }
+        await signInWithEmailAndPassword(auth, emailInput().value, passInput().value);
+    } catch (e) { status(e.message); }
+}
+
+window.requestRank = async function(rank) {
+
+    await addDoc(collection(db, "rank_requests"), {
+        uid: auth.currentUser.uid,
+        requestedRank: rank,
+        timestamp: new Date()
+    });
+
+    status("Rang beantragt");
+}
+
+window.submitLeave = async function() {
+
+    await addDoc(collection(db, "leave_requests"), {
+        uid: auth.currentUser.uid,
+        destination: document.getElementById("destination").value,
+        from: document.getElementById("fromDate").value,
+        to: document.getElementById("toDate").value,
+        informed: document.getElementById("informed").value,
+        timestamp: new Date()
+    });
+
+    status("Abmeldung gespeichert");
 }
 
 onAuthStateChanged(auth, async (user) => {
 
     if (!user) return;
 
-    document.getElementById("authBox").classList.add("hidden");
-    document.getElementById("header").classList.remove("hidden");
-    document.getElementById("appBox").classList.remove("hidden");
+    hide("authBox");
+    show("header");
+    show("appBox");
 
     const snap = await getDoc(doc(db, "users", user.uid));
+    currentUserData = snap.data();
 
-    if (!snap.exists()) {
-        status("Kein Benutzerprofil gefunden");
-        return;
-    }
-
-    const data = snap.data();
-
-    document.getElementById("userName").innerText = data.name;
-    document.getElementById("points").innerText = data.rPoints;
-    document.getElementById("rankLabel").innerText = formatRank(data.rank);
+    userName().innerText = currentUserData.name;
+    points().innerText = currentUserData.rPoints;
+    rankLabel().innerText = formatRank(currentUserData.rank);
 });
 
 function formatRank(rank) {
-    const map = {
-        hangaround: "Hangaround",
-        prospect: "Prospect",
-        member: "Member",
-        road_captain: "Road Captain",
-        treasurer: "Treasurer",
-        secretary: "Secretary",
-        sergeant_at_arms: "Sergeant at Arms",
-        vice_president: "Vice President",
-        president: "President"
-    };
-
-    return map[rank] || rank;
+    return rank.replaceAll("_", " ");
 }
 
-function status(msg) {
-    document.getElementById("status").innerText = msg;
+function toggle(id) {
+    document.getElementById(id).classList.toggle("hidden");
 }
+
+window.toggleMenu = function() {
+    alert("Info / Menü kommt in Phase 3");
+}
+
+function status(msg) { document.getElementById("status").innerText = msg; }
+function hide(id){ document.getElementById(id).classList.add("hidden"); }
+function show(id){ document.getElementById(id).classList.remove("hidden"); }
+
+const nameInput = () => document.getElementById("name");
+const emailInput = () => document.getElementById("email");
+const passInput = () => document.getElementById("password");
+
+const userName = () => document.getElementById("userName");
+const points = () => document.getElementById("points");
+const rankLabel = () => document.getElementById("rankLabel");
 </script>
 
 </body>
