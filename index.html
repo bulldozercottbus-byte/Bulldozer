@@ -59,11 +59,10 @@ textarea, input, select {
 
 .hidden { display: none; }
 
-.info-item, .help-item {
-    background: #222;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 8px;
+.menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 </style>
 </head>
@@ -90,60 +89,76 @@ textarea, input, select {
 
 <!-- HOME -->
 <div class="container hidden" id="homeScreen">
-
-    <div class="card">
+    <div class="menu-grid">
+        <button onclick="openScreen('rankScreen')">🎖 Ränge</button>
+        <button onclick="openScreen('notesScreen')">📝 Notizen</button>
+        <button onclick="openScreen('calcScreen')">🧮 Rechner</button>
         <button onclick="openScreen('infoScreen')">📢 Infos</button>
-        <button onclick="openScreen('helpScreen')">🆘 Hilfe / Aufgaben</button>
+        <button onclick="openScreen('helpScreen')">🆘 Hilfe</button>
         <button onclick="logout()">🚪 Logout</button>
     </div>
+</div>
 
+<!-- RÄNGE -->
+<div class="container hidden" id="rankScreen">
+    <div class="card">
+        <h3>Rang beantragen</h3>
+
+        <select id="rankSelect">
+            <option value="prospect">Prospect</option>
+            <option value="member">Member</option>
+            <option value="road_captain">Road Captain</option>
+            <option value="treasurer">Treasurer</option>
+            <option value="secretary">Secretary</option>
+            <option value="sergeant_at_arms">Sergeant at Arms</option>
+            <option value="vice_president">Vice President</option>
+        </select>
+
+        <button onclick="requestRank()">Rang beantragen</button>
+        <button onclick="backHome()">Zurück</button>
+    </div>
+</div>
+
+<!-- NOTIZEN -->
+<div class="container hidden" id="notesScreen">
+    <div class="card">
+        <h3>Notizen</h3>
+        <textarea id="noteText"></textarea>
+        <button onclick="saveNote()">Speichern</button>
+        <button onclick="backHome()">Zurück</button>
+        <div id="notesList"></div>
+    </div>
+</div>
+
+<!-- RECHNER -->
+<div class="container hidden" id="calcScreen">
+    <div class="card">
+        <h3>Rechner</h3>
+        <input type="text" id="calcDisplay">
+        <button onclick="calcResult()">= Ergebnis</button>
+        <button onclick="calcClear()">Clear</button>
+        <button onclick="backHome()">Zurück</button>
+    </div>
 </div>
 
 <!-- INFOS -->
 <div class="container hidden" id="infoScreen">
-
     <div class="card">
         <h3>Infos</h3>
         <div id="infosList"></div>
         <button onclick="backHome()">Zurück</button>
     </div>
-
-    <div class="card hidden" id="createInfoBox">
-        <h3>Info erstellen</h3>
-        <input type="text" id="infoTitle" placeholder="Titel">
-        <textarea id="infoText" placeholder="Text"></textarea>
-        <select id="confirmNeeded">
-            <option value="false">Keine Bestätigung</option>
-            <option value="true">Bestätigung erforderlich</option>
-        </select>
-        <button onclick="createInfo()">Speichern</button>
-    </div>
-
 </div>
 
 <!-- HELP -->
 <div class="container hidden" id="helpScreen">
-
     <div class="card">
-        <h3>Hilfe / Aufgabe erstellen</h3>
-        <textarea id="helpText" placeholder="Was wird benötigt?"></textarea>
-
-        <select id="helpTarget">
-            <option value="all">An Alle senden</option>
-            <option value="single">An Einzelnen User</option>
-        </select>
-
-        <input type="text" id="targetUid" placeholder="User UID (optional)">
-
+        <h3>Hilfe / Aufgabe</h3>
+        <textarea id="helpText"></textarea>
         <button onclick="createHelp()">Senden</button>
-    </div>
-
-    <div class="card">
-        <h3>Offene Hilfe</h3>
-        <div id="helpList"></div>
         <button onclick="backHome()">Zurück</button>
+        <div id="helpList"></div>
     </div>
-
 </div>
 
 <script type="module">
@@ -171,23 +186,18 @@ const db = getFirestore(app);
 let userData = null;
 
 window.register = async () => {
-    try {
-        const cred = await createUserWithEmailAndPassword(auth, email.value, password.value);
+    const cred = await createUserWithEmailAndPassword(auth, email.value, password.value);
+    const isAdmin = email.value === "Admin@Admin";
 
-        const isAdmin = email.value === "Admin@Admin";
-
-        await setDoc(doc(db, "users", cred.user.uid), {
-            name: name.value || "Admin",
-            rank: isAdmin ? "president" : "hangaround",
-            rPoints: 0
-        });
-
-    } catch (e) { status(e.message); }
+    await setDoc(doc(db, "users", cred.user.uid), {
+        name: name.value,
+        rank: isAdmin ? "president" : "hangaround",
+        rPoints: 0
+    });
 };
 
 window.login = async () => {
-    try { await signInWithEmailAndPassword(auth, email.value, password.value); }
-    catch (e) { status(e.message); }
+    await signInWithEmailAndPassword(auth, email.value, password.value);
 };
 
 window.logout = async () => {
@@ -196,7 +206,6 @@ window.logout = async () => {
 };
 
 onAuthStateChanged(auth, async (user) => {
-
     if (!user) return;
 
     hide("authBox");
@@ -210,86 +219,59 @@ onAuthStateChanged(auth, async (user) => {
     userName.innerText = userData.name;
     points.innerText = userData.rPoints;
 
-    if (canWriteInfo()) show("createInfoBox");
-
-    loadInfos();
-    loadHelp();
+    loadNotes();
 });
 
-async function loadInfos() {
-    infosList.innerHTML = "";
-    const snaps = await getDocs(collection(db, "infos"));
-
-    snaps.forEach(doc => {
-        const i = doc.data();
-        const div = document.createElement("div");
-        div.className = "info-item";
-        div.innerHTML = `<b>${i.title}</b><br>${i.text}`;
-        infosList.appendChild(div);
-    });
-}
-
-window.createInfo = async () => {
-    await addDoc(collection(db, "infos"), {
-        title: infoTitle.value,
-        text: infoText.value,
-        requireConfirmation: confirmNeeded.value === "true",
-        createdBy: auth.currentUser.uid,
-        timestamp: new Date()
+window.requestRank = async () => {
+    await addDoc(collection(db, "rank_requests"), {
+        uid: auth.currentUser.uid,
+        requestedRank: rankSelect.value
     });
 
-    loadInfos();
+    status("Rang beantragt");
 };
 
-async function loadHelp() {
-    helpList.innerHTML = "";
-    const snaps = await getDocs(collection(db, "help_requests"));
-
-    snaps.forEach(doc => {
-        const h = doc.data();
-
-        if (h.target !== "all" && h.target !== auth.currentUser.uid)
-            return;
-
-        const div = document.createElement("div");
-        div.className = "help-item";
-        div.innerText = h.text;
-        helpList.appendChild(div);
-    });
-}
-
-window.createHelp = async () => {
-
-    const target = helpTarget.value === "all"
-        ? "all"
-        : targetUid.value;
-
-    await addDoc(collection(db, "help_requests"), {
-        text: helpText.value,
-        createdBy: auth.currentUser.uid,
-        target,
-        timestamp: new Date()
+window.saveNote = async () => {
+    await addDoc(collection(db, "notes"), {
+        uid: auth.currentUser.uid,
+        text: noteText.value
     });
 
-    helpText.value = "";
-    loadHelp();
+    noteText.value = "";
+    loadNotes();
 };
 
-function canWriteInfo() {
-    return ["president","vice_president","sergeant_at_arms","secretary"]
-        .includes(userData.rank);
+async function loadNotes() {
+    notesList.innerHTML = "";
+    const q = query(collection(db, "notes"), where("uid", "==", auth.currentUser.uid));
+    const snaps = await getDocs(q);
+
+    snaps.forEach(doc => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerText = doc.data().text;
+        notesList.appendChild(div);
+    });
 }
+
+/* Rechner */
+window.calcResult = () => calcDisplay.value = eval(calcDisplay.value);
+window.calcClear = () => calcDisplay.value = "";
 
 window.openScreen = (id) => {
-    hide("homeScreen");
+    hideAll();
     show(id);
 };
 
 window.backHome = () => {
-    hide("infoScreen");
-    hide("helpScreen");
+    hideAll();
     show("homeScreen");
 };
+
+function hideAll() {
+    ["homeScreen","rankScreen","notesScreen","calcScreen","infoScreen","helpScreen"]
+    .forEach(hide);
+}
 
 function status(msg) { document.getElementById("status").innerText = msg; }
 function hide(id){ document.getElementById(id).classList.add("hidden"); }
