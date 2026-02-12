@@ -3,15 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter App</title>
+<title>Chapter App Monolith Final</title>
 
 <style>
+
+/* GLOBAL */
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
     background: #0f0f0f;
     color: white;
 }
+
 header {
     position: fixed;
     top: 0;
@@ -23,17 +27,20 @@ header {
     font-weight: bold;
     z-index: 10;
 }
+
 .container {
     padding: 80px 15px 30px;
     max-width: 500px;
     margin: auto;
 }
+
 .card {
     background: #181818;
     padding: 15px;
     border-radius: 10px;
     margin-bottom: 15px;
 }
+
 button {
     width: 100%;
     padding: 14px;
@@ -42,6 +49,7 @@ button {
     font-weight: bold;
     margin-top: 6px;
 }
+
 input, textarea, select {
     width: 100%;
     padding: 10px;
@@ -50,13 +58,20 @@ input, textarea, select {
     border: 1px solid #333;
     color: white;
 }
+
 .hidden { display: none; }
+
+.priority1 { color: gray; }
+.priority2 { color: orange; }
+.priority3 { color: red; font-weight: bold; }
+
 .badge {
     background: red;
     padding: 3px 8px;
     border-radius: 20px;
     font-size: 12px;
 }
+
 </style>
 </head>
 
@@ -71,36 +86,53 @@ input, textarea, select {
 <div class="container" id="authBox">
     <div class="card">
         <h3>Login</h3>
-        <input type="email" id="email">
-        <input type="password" id="password">
+        <input id="email" type="email">
+        <input id="password" type="password">
         <button id="loginBtn">Login</button>
         <p id="status"></p>
     </div>
 </div>
+
 <div class="container hidden" id="homeScreen">
     <div class="card">
+        <button onclick="openScreen('infoScreen')">Infos <span id="infoBadge" class="badge">0</span></button>
+        <button onclick="openScreen('ridesScreen')">Ausfahrten</button>
+        <button onclick="openScreen('notesScreen')">Notizen</button>
+        <button onclick="openScreen('calcScreen')">Rechner</button>
+        <button onclick="openScreen('filesScreen')">Dateien</button>
+        <button onclick="openScreen('helpScreen')">Hilfe</button>
+        <button onclick="openScreen('officerScreen')">Officer Panel</button>
+        <button onclick="logout()">Logout</button>
+    </div>
+</div>
 
-        <button onclick="openScreen('infoScreen')">
-            📢 Infos <span id="infoBadge" class="badge">0</span>
-        </button>
+<div class="container hidden" id="infoScreen">
+    <div class="card">
+        <div id="infosList"></div>
+        <textarea id="newInfoText"></textarea>
+        <button id="postInfoBtn" class="hidden">Info posten</button>
+        <button onclick="backHome()">Zurück</button>
+    </div>
+</div>
 
-        <button onclick="openScreen('ridesScreen')">🏍 Ausfahrten</button>
-        <button onclick="openScreen('notesScreen')">📝 Notizen</button>
-        <button onclick="openScreen('calcScreen')">🧮 Rechner</button>
-        <button onclick="openScreen('filesScreen')">📁 Dateien</button>
-        <button onclick="openScreen('helpScreen')">🆘 Hilfe</button>
-        <button onclick="openScreen('rankScreen')">🎖 Ränge</button>
-        <button onclick="openScreen('historyScreen')">🏛 Historie</button>
-
-        <button onclick="logout()">🚪 Logout</button>
-
+<div class="container hidden" id="ridesScreen">
+    <div class="card">
+        <div id="ridesList"></div>
+        <textarea id="rideText"></textarea>
+        <select id="ridePriority">
+            <option value="1">Locker</option>
+            <option value="2">Wichtig</option>
+            <option value="3">Pflicht</option>
+        </select>
+        <button id="createRideBtn" class="hidden">Ride speichern</button>
+        <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 
 <div class="container hidden" id="notesScreen">
     <div class="card">
         <textarea id="noteText"></textarea>
-        <button onclick="saveNote()">Speichern</button>
+        <button id="saveNoteBtn">Speichern</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
@@ -108,8 +140,8 @@ input, textarea, select {
 <div class="container hidden" id="calcScreen">
     <div class="card">
         <input id="calcDisplay">
-        <button onclick="calcResult()">Berechnen</button>
-        <button onclick="saveCalculation()">Speichern</button>
+        <button id="calcBtn">Berechnen</button>
+        <button id="saveCalcBtn">Speichern</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
@@ -125,53 +157,31 @@ input, textarea, select {
 <div class="container hidden" id="helpScreen">
     <div class="card">
         <textarea id="helpText"></textarea>
-        <button onclick="createHelp()">Speichern</button>
+        <button id="helpBtn">Speichern</button>
         <div id="helpList"></div>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 
-<div class="container hidden" id="rankScreen">
+<div class="container hidden" id="officerScreen">
     <div class="card">
-        <h3>Ränge</h3>
-        <p>Supporter – Unterstützer</p>
-        <p>Hangaround – Kennenlernen</p>
-        <p>Prospect – Probezeit</p>
-        <p>Member – Vollmitglied</p>
-        <p>Road Captain – Ausfahrten</p>
-        <p>Treasurer – Finanzen</p>
-        <p>Secretary – Verwaltung</p>
-        <p>Sergeant at Arms – Sicherheit</p>
-        <p>Vice President – Stellvertretung</p>
-        <p>President – Führung</p>
-        <button onclick="backHome()">Zurück</button>
-    </div>
-</div>
-
-<div class="container hidden" id="historyScreen">
-    <div class="card">
-        <p>Historie Platzhalter</p>
+        <input id="targetUid">
+        <input id="pointsAmount">
+        <button id="addPointsBtn">Punkte vergeben</button>
+        <input id="newRank">
+        <button id="setRankBtn">Rang setzen</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
-    getAuth,
-    signInWithEmailAndPassword,
-    onAuthStateChanged,
-    signOut
+    getAuth, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import {
-    getFirestore,
-    addDoc,
-    collection,
-    getDocs,
-    query,
-    where,
-    deleteDoc,
-    doc
+    getFirestore, doc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const app = initializeApp({
@@ -183,81 +193,107 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+let CURRENT_UID = null;
+let CURRENT_RANK = null;
+
 loginBtn.onclick = async () => {
-    await signInWithEmailAndPassword(auth, email.value, password.value);
+    await signInWithEmailAndPassword(auth,email.value,password.value);
 };
 
 window.logout = async () => await signOut(auth);
 
-onAuthStateChanged(auth, user => {
-    if (!user) return;
-    authBox.classList.add("hidden");
-    header.classList.remove("hidden");
-    homeScreen.classList.remove("hidden");
-    loadFiles();
-});
-
-window.saveNote = async () => {
-    await addDoc(collection(db,"notes"), {
-        uid: auth.currentUser.uid,
-        text: noteText.value
-    });
-    noteText.value = "";
-    loadFiles();
-};
-
-window.calcResult = () => {
-    try { calcDisplay.value = Function("return " + calcDisplay.value)(); }
-    catch { alert("Fehler"); }
-};
-
-window.saveCalculation = async () => {
-    await addDoc(collection(db,"calculations"), {
-        uid: auth.currentUser.uid,
-        calc: calcDisplay.value
-    });
-    loadFiles();
-};
-
-async function loadFiles() {
-
-    filesNotes.innerHTML = "";
-
-    const notes = await getDocs(query(
-        collection(db,"notes"),
-        where("uid","==",auth.currentUser.uid)
-    ));
-
-    notes.forEach(n => {
-        filesNotes.innerHTML += `
-            <div class="card">
-                ${n.data().text}
-                <button onclick="deleteNote('${n.id}')">Löschen</button>
-            </div>`;
-    });
-}
-
-window.deleteNote = async id => {
-    await deleteDoc(doc(db,"notes",id));
-    loadFiles();
-};
-
-window.createHelp = async () => {
-    await addDoc(collection(db,"help_requests"), {
-        uid: auth.currentUser.uid,
-        text: helpText.value
-    });
-    helpText.value = "";
-};
-
 window.openScreen = id => {
-    document.querySelectorAll(".container")
-        .forEach(c => c.classList.add("hidden"));
-    document.getElementById(id)
-        .classList.remove("hidden");
+    document.querySelectorAll(".container").forEach(c=>c.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
 };
 
 window.backHome = () => openScreen("homeScreen");
+
+onAuthStateChanged(auth, async user => {
+
+    if (!user) return;
+
+    CURRENT_UID = user.uid;
+
+    authBox.classList.add("hidden");
+    header.classList.remove("hidden");
+    homeScreen.classList.remove("hidden");
+
+    const snap = await getDoc(doc(db,"users",user.uid));
+    const data = snap.data();
+
+    CURRENT_RANK = data.rank;
+
+    rankLabel.innerText = data.rank;
+    userName.innerText = data.name;
+    points.innerText = data.rPoints;
+
+});
+</script>
+<script type="module">
+import {
+    addDoc, collection
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+saveNoteBtn.onclick = async () => {
+    await addDoc(collection(db,"notes"),{
+        uid:CURRENT_UID,
+        text:noteText.value
+    });
+    noteText.value="";
+};
+
+calcBtn.onclick = () => {
+    try { calcDisplay.value = Function("return "+calcDisplay.value)(); }
+    catch { alert("Fehler"); }
+};
+
+saveCalcBtn.onclick = async () => {
+    await addDoc(collection(db,"calculations"),{
+        uid:CURRENT_UID,
+        calc:calcDisplay.value
+    });
+};
+
+helpBtn.onclick = async () => {
+    await addDoc(collection(db,"help_requests"),{
+        uid:CURRENT_UID,
+        text:helpText.value
+    });
+    helpText.value="";
+};
+</script>
+<script type="module">
+import {
+    getDoc, updateDoc, doc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+function hasOfficerRights(){
+    return ["president","vice_president","sergeant_at_arms"].includes(CURRENT_RANK);
+}
+
+addPointsBtn.onclick = async () => {
+
+    if(!hasOfficerRights()) return;
+
+    const ref = doc(db,"users",targetUid.value);
+    const snap = await getDoc(ref);
+
+    const current = snap.data().rPoints || 0;
+
+    await updateDoc(ref,{
+        rPoints: current + Number(pointsAmount.value)
+    });
+};
+
+setRankBtn.onclick = async () => {
+
+    if(CURRENT_RANK !== "president") return;
+
+    await updateDoc(doc(db,"users",targetUid.value),{
+        rank:newRank.value
+    });
+};
 </script>
 
 </body>
