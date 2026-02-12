@@ -24,6 +24,7 @@ header {
     z-index: 10;
 }
 .rank { color: orange; }
+
 .container {
     padding: 80px 15px 30px;
     max-width: 500px;
@@ -44,7 +45,7 @@ button {
     margin-top: 6px;
     cursor: pointer;
 }
-input, textarea {
+input, textarea, select {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
@@ -53,6 +54,13 @@ input, textarea {
     color: white;
 }
 .hidden { display: none; }
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
 .badge {
     background: red;
     padding: 3px 8px;
@@ -69,6 +77,7 @@ input, textarea {
     R.Punkte: <span id="points"></span>
 </header>
 
+<!-- LOGIN -->
 <div class="container" id="authBox">
     <div class="card">
         <h3>Login</h3>
@@ -79,19 +88,30 @@ input, textarea {
     </div>
 </div>
 
+<!-- HOME -->
 <div class="container hidden" id="homeScreen">
-    <div class="card">
+    <div class="menu-grid">
+
         <button onclick="openScreen('infoScreen')">
             📢 Infos <span id="infoBadge" class="badge">0</span>
         </button>
+
+        <button onclick="openScreen('ridesScreen')">🏍 Ausfahrten</button>
         <button onclick="openScreen('notesScreen')">📝 Notizen</button>
         <button onclick="openScreen('calcScreen')">🧮 Rechner</button>
         <button onclick="openScreen('filesScreen')">📁 Dateien</button>
         <button onclick="openScreen('rankScreen')">🎖 Rang Beschreibung</button>
+
+        <button id="officerBtn" class="hidden"
+                onclick="openScreen('officerScreen')">
+            🛡 Officer Panel
+        </button>
+
         <button onclick="logout()">🚪 Logout</button>
     </div>
 </div>
 
+<!-- INFOS -->
 <div class="container hidden" id="infoScreen">
     <div class="card">
         <h3>Infos</h3>
@@ -100,62 +120,116 @@ input, textarea {
     </div>
 </div>
 
+<!-- RIDES -->
+<div class="container hidden" id="ridesScreen">
+    <div class="card">
+        <h3>Ausfahrten</h3>
+
+        <div id="ridesList"></div>
+
+        <div id="createRideBox" class="hidden">
+            <textarea id="rideText" placeholder="Ausfahrt"></textarea>
+
+            <select id="ridePriority">
+                <option value="1">1 – Locker</option>
+                <option value="2">2 – Wichtig</option>
+                <option value="3">3 – Pflicht</option>
+            </select>
+
+            <button onclick="createRide()">Speichern</button>
+        </div>
+
+        <button onclick="backHome()">Zurück</button>
+    </div>
+</div>
+
+<!-- NOTES -->
 <div class="container hidden" id="notesScreen">
     <div class="card">
-        <h3>Notiz speichern</h3>
+        <h3>Notizen</h3>
         <textarea id="noteText"></textarea>
         <button onclick="saveNote()">Speichern</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 
+<!-- CALC -->
 <div class="container hidden" id="calcScreen">
     <div class="card">
         <h3>Rechner</h3>
         <input id="calcDisplay">
-        <button onclick="calcResult()">= Ergebnis</button>
+        <button onclick="calcResult()">Berechnen</button>
         <button onclick="saveCalculation()">Speichern</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 
+<!-- FILES -->
 <div class="container hidden" id="filesScreen">
     <div class="card">
         <h3>Dateien</h3>
+
+        <h4>Notizen</h4>
         <div id="filesNotes"></div>
+
+        <h4>Berechnungen</h4>
         <div id="filesCalcs"></div>
+
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 
+<!-- RANK DESCRIPTION -->
 <div class="container hidden" id="rankScreen">
     <div class="card">
-        <h3>Ränge</h3>
-        <p><b>Hangaround</b> – Einstieg</p>
+        <h3>Alle Ränge</h3>
+
+        <p><b>Supporter</b> – Unterstützer</p>
+        <p><b>Hangaround</b> – Kennenlernen</p>
+        <p><b>Prospect</b> – Probezeit</p>
         <p><b>Member</b> – Vollmitglied</p>
         <p><b>Road Captain</b> – Ausfahrten</p>
+        <p><b>Treasurer</b> – Finanzen</p>
+        <p><b>Secretary</b> – Organisation</p>
+        <p><b>Sergeant at Arms</b> – Sicherheit</p>
+        <p><b>Vice President</b> – Stellvertretung</p>
         <p><b>President</b> – Führung</p>
+
+        <button onclick="backHome()">Zurück</button>
+    </div>
+</div>
+
+<!-- OFFICER -->
+<div class="container hidden" id="officerScreen">
+    <div class="card">
+        <h3>Officer Panel</h3>
+
+        <input id="infoTitle" placeholder="Titel">
+        <textarea id="infoText"></textarea>
+
+        <button onclick="createInfo()">Info posten</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+    getAuth, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import {
-    getFirestore, doc, getDoc,
-    addDoc, collection, query, where, getDocs
+    getFirestore, doc, getDoc, addDoc,
+    collection, getDocs, query, where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
   authDomain: "bulldozer-f8a26.firebaseapp.com",
   projectId: "bulldozer-f8a26"
-};
+});
 
-const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -167,7 +241,6 @@ loginBtn.onclick = async () => {
 
 window.logout = async () => await signOut(auth);
 
-/* AUTO LOGIN */
 onAuthStateChanged(auth, async user => {
 
     if (!user) return;
@@ -176,64 +249,49 @@ onAuthStateChanged(auth, async user => {
     homeScreen.classList.remove("hidden");
     header.classList.remove("hidden");
 
-    const snap = await getDoc(doc(db, "users", user.uid));
+    const snap = await getDoc(doc(db,"users",user.uid));
     const data = snap.data();
 
     rankLabel.innerText = data.rank;
     userName.innerText = data.name;
     points.innerText = data.rPoints;
 
+    if (["secretary","sergeant_at_arms","vice_president","president"]
+        .includes(data.rank))
+        officerBtn.classList.remove("hidden");
+
     loadInfos();
     loadFiles();
 });
 
-/* INFOS */
 async function loadInfos(){
     const snaps = await getDocs(collection(db,"infos"));
     infoBadge.innerText = snaps.size;
 }
 
-/* NOTIZ */
 window.saveNote = async () => {
-    if (!auth.currentUser) return;
-
     await addDoc(collection(db,"notes"),{
         uid: auth.currentUser.uid,
-        text: noteText.value,
-        timestamp: new Date()
+        text: noteText.value
     });
-
     noteText.value="";
     loadFiles();
 };
 
-/* RECHNER */
 window.calcResult = () => {
-    try { calcDisplay.value = eval(calcDisplay.value); }
-    catch { calcDisplay.value = "Error"; }
+    try { calcDisplay.value = Function("return " + calcDisplay.value)(); }
+    catch { status("Fehlerhafte Rechnung"); }
 };
 
 window.saveCalculation = async () => {
-    if (!auth.currentUser) return;
-
-    try {
-        const result = eval(calcDisplay.value);
-
-        await addDoc(collection(db,"calculations"),{
-            uid: auth.currentUser.uid,
-            expression: calcDisplay.value,
-            result,
-            timestamp: new Date()
-        });
-
-        loadFiles();
-    } catch { status("Ungültige Berechnung"); }
+    await addDoc(collection(db,"calculations"),{
+        uid: auth.currentUser.uid,
+        calc: calcDisplay.value
+    });
+    loadFiles();
 };
 
-/* DATEIEN */
 async function loadFiles(){
-
-    if (!auth.currentUser) return;
 
     filesNotes.innerHTML="";
     filesCalcs.innerHTML="";
@@ -241,20 +299,28 @@ async function loadFiles(){
     const notes = await getDocs(query(collection(db,"notes"),
         where("uid","==",auth.currentUser.uid)));
 
-    notes.forEach(doc=> {
-        filesNotes.innerHTML += `<div class="card">${doc.data().text}</div>`;
-    });
+    notes.forEach(d=> filesNotes.innerHTML += `<div class="card">${d.data().text}</div>`);
 
     const calcs = await getDocs(query(collection(db,"calculations"),
         where("uid","==",auth.currentUser.uid)));
 
-    calcs.forEach(doc=> {
-        const d = doc.data();
-        filesCalcs.innerHTML += `<div class="card">${d.expression} = ${d.result}</div>`;
-    });
+    calcs.forEach(d=> filesCalcs.innerHTML += `<div class="card">${d.data().calc}</div>`);
 }
 
-/* NAVIGATION */
+window.createRide = async () => {
+    await addDoc(collection(db,"rides"),{
+        text: rideText.value,
+        priority: ridePriority.value
+    });
+};
+
+window.createInfo = async () => {
+    await addDoc(collection(db,"infos"),{
+        title: infoTitle.value,
+        text: infoText.value
+    });
+};
+
 window.openScreen = id => {
     document.querySelectorAll(".container").forEach(c=>c.classList.add("hidden"));
     document.getElementById(id).classList.remove("hidden");
