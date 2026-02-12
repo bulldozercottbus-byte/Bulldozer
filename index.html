@@ -3,22 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Chapter App</title>
 
 <style>
-
-/* ===== GLOBAL ===== */
-
 body {
     margin: 0;
     font-family: Arial, sans-serif;
     background: #0f0f0f;
     color: white;
 }
-
-/* ===== HEADER ===== */
-
 header {
     position: fixed;
     top: 0;
@@ -30,28 +23,17 @@ header {
     font-weight: bold;
     z-index: 10;
 }
-
-.rank {
-    color: orange;
-}
-
-/* ===== LAYOUT ===== */
-
 .container {
     padding: 80px 15px 30px;
     max-width: 500px;
     margin: auto;
 }
-
 .card {
     background: #181818;
     padding: 15px;
     border-radius: 10px;
     margin-bottom: 15px;
 }
-
-/* ===== BUTTONS ===== */
-
 button {
     width: 100%;
     padding: 14px;
@@ -59,14 +41,8 @@ button {
     background: orange;
     font-weight: bold;
     margin-top: 6px;
-    cursor: pointer;
 }
-
-/* ===== INPUTS ===== */
-
-input,
-textarea,
-select {
+input, textarea, select {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
@@ -74,157 +50,63 @@ select {
     border: 1px solid #333;
     color: white;
 }
-
-/* ===== UTIL ===== */
-
-.hidden {
-    display: none;
-}
-
-.menu-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
+.hidden { display: none; }
 .badge {
     background: red;
     padding: 3px 8px;
     border-radius: 20px;
     font-size: 12px;
 }
-
 </style>
 </head>
 
 <body>
 
-<!-- ========================================================= -->
-<!-- HEADER -->
-<!-- ========================================================= -->
-
 <header id="header" class="hidden">
-    <span class="rank" id="rankLabel"></span>
-    |
-    <span id="userName"></span>
-    |
-    R.Punkte:
-    <span id="points"></span>
+    <span id="rankLabel"></span> |
+    <span id="userName"></span> |
+    Punkte: <span id="points"></span>
 </header>
 
-<!-- ========================================================= -->
-<!-- LOGIN SCREEN -->
-<!-- ========================================================= -->
-
 <div class="container" id="authBox">
-
     <div class="card">
-
         <h3>Login</h3>
-
-        <input
-            type="email"
-            id="email"
-            placeholder="Email"
-        >
-
-        <input
-            type="password"
-            id="password"
-            placeholder="Passwort"
-        >
-
-        <button id="loginBtn">
-            Login
-        </button>
-
+        <input type="email" id="email">
+        <input type="password" id="password">
+        <button id="loginBtn">Login</button>
         <p id="status"></p>
-
     </div>
-
 </div>
-
-<!-- ========================================================= -->
-<!-- HOME SCREEN -->
-<!-- ========================================================= -->
-
 <div class="container hidden" id="homeScreen">
-
-    <div class="menu-grid">
+    <div class="card">
 
         <button onclick="openScreen('infoScreen')">
-            📢 Infos
-            <span id="infoBadge" class="badge">0</span>
+            📢 Infos <span id="infoBadge" class="badge">0</span>
         </button>
 
-        <button onclick="openScreen('ridesScreen')">
-            🏍 Ausfahrten
-        </button>
+        <button onclick="openScreen('ridesScreen')">🏍 Ausfahrten</button>
+        <button onclick="openScreen('notesScreen')">📝 Notizen</button>
+        <button onclick="openScreen('calcScreen')">🧮 Rechner</button>
+        <button onclick="openScreen('filesScreen')">📁 Dateien</button>
+        <button onclick="openScreen('helpScreen')">🆘 Hilfe</button>
+        <button onclick="openScreen('rankScreen')">🎖 Ränge</button>
+        <button onclick="openScreen('historyScreen')">🏛 Historie</button>
 
-        <button onclick="openScreen('notesScreen')">
-            📝 Notizen
-        </button>
-
-        <button onclick="openScreen('calcScreen')">
-            🧮 Rechner
-        </button>
-
-        <button onclick="openScreen('filesScreen')">
-            📁 Dateien
-        </button>
-
-        <button onclick="openScreen('helpScreen')">
-            🆘 Hilfe
-        </button>
-
-        <button onclick="openScreen('rankScreen')">
-            🎖 Ränge
-        </button>
-
-        <button onclick="openScreen('historyScreen')">
-            🏛 Historie
-        </button>
-
-        <button onclick="logout()">
-            🚪 Logout
-        </button>
+        <button onclick="logout()">🚪 Logout</button>
 
     </div>
-
 </div>
-
-<!-- ========================================================= -->
-<!-- INFOS -->
-<!-- ========================================================= -->
-
-<div class="container hidden" id="infoScreen">
-    <div class="card">
-        <h3>Infos</h3>
-        <div id="infosList"></div>
-        <button onclick="backHome()">Zurück</button>
-    </div>
-</div>
-
-<!-- ========================================================= -->
-<!-- NOTES -->
-<!-- ========================================================= -->
 
 <div class="container hidden" id="notesScreen">
     <div class="card">
-        <h3>Notiz speichern</h3>
         <textarea id="noteText"></textarea>
         <button onclick="saveNote()">Speichern</button>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
 
-<!-- ========================================================= -->
-<!-- CALCULATOR -->
-<!-- ========================================================= -->
-
 <div class="container hidden" id="calcScreen">
     <div class="card">
-        <h3>Rechner</h3>
         <input id="calcDisplay">
         <button onclick="calcResult()">Berechnen</button>
         <button onclick="saveCalculation()">Speichern</button>
@@ -232,33 +114,16 @@ select {
     </div>
 </div>
 
-<!-- ========================================================= -->
-<!-- FILES -->
-<!-- ========================================================= -->
-
 <div class="container hidden" id="filesScreen">
     <div class="card">
-
-        <h3>Dateien</h3>
-
-        <h4>Notizen</h4>
         <div id="filesNotes"></div>
-
-        <h4>Berechnungen</h4>
         <div id="filesCalcs"></div>
-
         <button onclick="backHome()">Zurück</button>
-
     </div>
 </div>
 
-<!-- ========================================================= -->
-<!-- HELP -->
-<!-- ========================================================= -->
-
 <div class="container hidden" id="helpScreen">
     <div class="card">
-        <h3>Hilfe</h3>
         <textarea id="helpText"></textarea>
         <button onclick="createHelp()">Speichern</button>
         <div id="helpList"></div>
@@ -266,45 +131,30 @@ select {
     </div>
 </div>
 
-<!-- ========================================================= -->
-<!-- RANKS -->
-<!-- ========================================================= -->
-
 <div class="container hidden" id="rankScreen">
     <div class="card">
-        <h3>Alle Ränge</h3>
-        <p>Supporter</p>
-        <p>Hangaround</p>
-        <p>Prospect</p>
-        <p>Member</p>
-        <p>Road Captain</p>
-        <p>Treasurer</p>
-        <p>Secretary</p>
-        <p>Sergeant at Arms</p>
-        <p>Vice President</p>
-        <p>President</p>
+        <h3>Ränge</h3>
+        <p>Supporter – Unterstützer</p>
+        <p>Hangaround – Kennenlernen</p>
+        <p>Prospect – Probezeit</p>
+        <p>Member – Vollmitglied</p>
+        <p>Road Captain – Ausfahrten</p>
+        <p>Treasurer – Finanzen</p>
+        <p>Secretary – Verwaltung</p>
+        <p>Sergeant at Arms – Sicherheit</p>
+        <p>Vice President – Stellvertretung</p>
+        <p>President – Führung</p>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
-
-<!-- ========================================================= -->
-<!-- HISTORY -->
-<!-- ========================================================= -->
 
 <div class="container hidden" id="historyScreen">
     <div class="card">
-        <h3>Historie</h3>
-        <p>Hier kommt eure Story rein.</p>
+        <p>Historie Platzhalter</p>
         <button onclick="backHome()">Zurück</button>
     </div>
 </div>
-
-<!-- ========================================================= -->
-<!-- FIREBASE -->
-<!-- ========================================================= -->
-
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
     getAuth,
@@ -315,16 +165,14 @@ import {
 
 import {
     getFirestore,
-    doc,
-    getDoc,
     addDoc,
     collection,
     getDocs,
     query,
-    where
+    where,
+    deleteDoc,
+    doc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-/* ===== CONFIG ===== */
 
 const app = initializeApp({
     apiKey: "AIzaSyCnFEjFOcrpwjHtVnQ_-QssGtEhY__FzDk",
@@ -335,56 +183,81 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ===== LOGIN ===== */
-
 loginBtn.onclick = async () => {
-    try {
-        await signInWithEmailAndPassword(auth, email.value, password.value);
-    } catch (e) {
-        status(e.message);
-    }
+    await signInWithEmailAndPassword(auth, email.value, password.value);
 };
 
-/* ===== LOGOUT ===== */
+window.logout = async () => await signOut(auth);
 
-window.logout = async () => {
-    await signOut(auth);
-};
-
-/* ===== AUTH STATE ===== */
-
-onAuthStateChanged(auth, async user => {
-
+onAuthStateChanged(auth, user => {
     if (!user) return;
-
     authBox.classList.add("hidden");
-    homeScreen.classList.remove("hidden");
     header.classList.remove("hidden");
-
-    const snap = await getDoc(doc(db, "users", user.uid));
-    const data = snap.data();
-
-    rankLabel.innerText = data.rank;
-    userName.innerText = data.name;
-    points.innerText = data.rPoints;
-
+    homeScreen.classList.remove("hidden");
+    loadFiles();
 });
 
-/* ===== NAVIGATION ===== */
+window.saveNote = async () => {
+    await addDoc(collection(db,"notes"), {
+        uid: auth.currentUser.uid,
+        text: noteText.value
+    });
+    noteText.value = "";
+    loadFiles();
+};
+
+window.calcResult = () => {
+    try { calcDisplay.value = Function("return " + calcDisplay.value)(); }
+    catch { alert("Fehler"); }
+};
+
+window.saveCalculation = async () => {
+    await addDoc(collection(db,"calculations"), {
+        uid: auth.currentUser.uid,
+        calc: calcDisplay.value
+    });
+    loadFiles();
+};
+
+async function loadFiles() {
+
+    filesNotes.innerHTML = "";
+
+    const notes = await getDocs(query(
+        collection(db,"notes"),
+        where("uid","==",auth.currentUser.uid)
+    ));
+
+    notes.forEach(n => {
+        filesNotes.innerHTML += `
+            <div class="card">
+                ${n.data().text}
+                <button onclick="deleteNote('${n.id}')">Löschen</button>
+            </div>`;
+    });
+}
+
+window.deleteNote = async id => {
+    await deleteDoc(doc(db,"notes",id));
+    loadFiles();
+};
+
+window.createHelp = async () => {
+    await addDoc(collection(db,"help_requests"), {
+        uid: auth.currentUser.uid,
+        text: helpText.value
+    });
+    helpText.value = "";
+};
 
 window.openScreen = id => {
-    document.querySelectorAll(".container").forEach(c => c.classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
+    document.querySelectorAll(".container")
+        .forEach(c => c.classList.add("hidden"));
+    document.getElementById(id)
+        .classList.remove("hidden");
 };
 
 window.backHome = () => openScreen("homeScreen");
-
-/* ===== STATUS ===== */
-
-function status(msg) {
-    document.getElementById("status").innerText = msg;
-}
-
 </script>
 
 </body>
